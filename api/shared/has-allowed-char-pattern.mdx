@@ -1,0 +1,266 @@
+---
+title: HasAllowedCharPatternElement
+description: Interface for Vaadin input components that support character pattern constraints
+---
+
+## Overview
+
+`HasAllowedCharPatternElement` provides utilities to interact with Vaadin input components that support the `allowedCharPattern` property. This property constrains which characters users can type into the field by specifying a regular expression pattern.
+
+This mixin interface extends [HasLocatorElement](/api/shared/has-locator) and provides default implementations for getting, setting, and asserting the allowed character pattern.
+
+## Interface
+
+```java
+public interface HasAllowedCharPatternElement extends HasLocatorElement {
+    default String getAllowedCharPattern() { ... }
+    default void setAllowedCharPattern(String pattern) { ... }
+    default void assertAllowedCharPattern(String pattern) { ... }
+}
+```
+
+## Methods
+
+### getAllowedCharPattern()
+
+Retrieves the current `allowedCharPattern` from the component.
+
+```java
+default String getAllowedCharPattern()
+```
+
+**Returns:** The pattern string, or `null` if no pattern is set
+
+**Implementation:**
+```java
+return getLocator().evaluate("el => el.allowedCharPattern").toString();
+```
+
+---
+
+### setAllowedCharPattern()
+
+Sets the `allowedCharPattern` on the component programmatically.
+
+```java
+default void setAllowedCharPattern(String pattern)
+```
+
+<ParamField path="pattern" type="String">
+  Regular expression pattern to apply. For example, `"[0-9]"` allows only digits, `"[A-Za-z]"` allows only letters.
+</ParamField>
+
+**Implementation:**
+```java
+getLocator().evaluate("(el, p) => el.allowedCharPattern = p", pattern);
+```
+
+---
+
+### assertAllowedCharPattern()
+
+Asserts that the `allowedCharPattern` matches the expected value.
+
+```java
+default void assertAllowedCharPattern(String pattern)
+```
+
+<ParamField path="pattern" type="String">
+  Expected pattern string. If `null`, asserts that no pattern is set.
+</ParamField>
+
+**Behavior:**
+- If `pattern` is non-null: Asserts the component has exactly that pattern
+- If `pattern` is null: Asserts the attribute is absent
+
+## Implementing Classes
+
+The following element classes implement `HasAllowedCharPatternElement`:
+
+- `TextFieldElement` - Text input fields
+- `BigDecimalFieldElement` - Decimal number fields
+- `AbstractNumberFieldElement` - Base class for number fields
+- `ComboBoxElement` - Combo box selectors (with text input)
+- `MultiSelectComboBoxElement` - Multi-select combo boxes
+
+## Usage Examples
+
+### Restricting Input to Digits
+
+```java
+import com.microsoft.playwright.Page;
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+
+public class DigitsOnlyExample {
+    public void testDigitsOnlyField(Page page) {
+        TextFieldElement phoneField = TextFieldElement.getByLabel(page, "Phone");
+        
+        // Set pattern to allow only digits
+        phoneField.setAllowedCharPattern("[0-9]");
+        
+        // Verify the pattern is applied
+        phoneField.assertAllowedCharPattern("[0-9]");
+        
+        // Try to enter invalid characters - they should be rejected
+        phoneField.fill("abc123");
+        phoneField.assertValue("123"); // Only digits are kept
+    }
+}
+```
+
+### Restricting Input to Letters
+
+```java
+public class LettersOnlyExample {
+    public void testLettersOnlyField(Page page) {
+        TextFieldElement nameField = TextFieldElement.getByLabel(page, "Name");
+        
+        // Set pattern to allow only letters and spaces
+        nameField.setAllowedCharPattern("[A-Za-z ]");
+        
+        // Verify the pattern
+        String pattern = nameField.getAllowedCharPattern();
+        assertEquals("[A-Za-z ]", pattern);
+    }
+}
+```
+
+### Testing Pattern Validation
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class AllowedCharPatternIT {
+    @Test
+    public void shouldRestrictToNumericInput() {
+        TextFieldElement quantityField = TextFieldElement.getByLabel(page, "Quantity");
+        
+        // Apply numeric-only pattern
+        quantityField.setAllowedCharPattern("[0-9]");
+        quantityField.assertAllowedCharPattern("[0-9]");
+        
+        // Attempt to type letters - should be blocked
+        quantityField.click();
+        page.keyboard().type("abc");
+        
+        // Field should remain empty
+        quantityField.assertValue("");
+        
+        // Type valid digits - should work
+        page.keyboard().type("42");
+        quantityField.assertValue("42");
+    }
+    
+    @Test
+    public void shouldAllowCustomPattern() {
+        TextFieldElement codeField = TextFieldElement.getByLabel(page, "Code");
+        
+        // Allow only uppercase letters and digits
+        codeField.setAllowedCharPattern("[A-Z0-9]");
+        
+        // Get and verify the pattern
+        assertEquals("[A-Z0-9]", codeField.getAllowedCharPattern());
+        
+        // Assert using built-in method
+        codeField.assertAllowedCharPattern("[A-Z0-9]");
+    }
+    
+    @Test
+    public void shouldHandleNoPattern() {
+        TextFieldElement freeTextField = TextFieldElement.getByLabel(page, "Comments");
+        
+        // Assert no pattern is set
+        freeTextField.assertAllowedCharPattern(null);
+        
+        // Field should accept any input
+        freeTextField.fill("Any text 123 !@#");
+        freeTextField.assertValue("Any text 123 !@#");
+    }
+}
+```
+
+### ComboBox with Pattern
+
+```java
+import org.vaadin.addons.dramafinder.element.ComboBoxElement;
+
+public class ComboBoxPatternExample {
+    public void testComboBoxPattern(Page page) {
+        ComboBoxElement productCode = ComboBoxElement.getByLabel(page, "Product Code");
+        
+        // Restrict manual input to alphanumeric characters
+        productCode.setAllowedCharPattern("[A-Za-z0-9-]");
+        
+        // Verify pattern is set
+        productCode.assertAllowedCharPattern("[A-Za-z0-9-]");
+        
+        // User can still select from dropdown, but manual typing is restricted
+        productCode.clickInput();
+        page.keyboard().type("ABC-123"); // Valid
+        page.keyboard().type("@#$");     // Ignored
+    }
+}
+```
+
+### Programmatic Pattern Changes
+
+```java
+public class DynamicPatternExample {
+    public void testDynamicPattern(Page page) {
+        TextFieldElement inputField = TextFieldElement.getByLabel(page, "Input");
+        
+        // Start with digits only
+        inputField.setAllowedCharPattern("[0-9]");
+        inputField.fill("123");
+        inputField.assertValue("123");
+        
+        // Change to letters only
+        inputField.setAllowedCharPattern("[A-Za-z]");
+        inputField.fill("ABC");
+        inputField.assertValue("ABC");
+        
+        // Remove pattern restriction
+        inputField.setAllowedCharPattern(null);
+        inputField.assertAllowedCharPattern(null);
+        inputField.fill("Any123!@#");
+        inputField.assertValue("Any123!@#");
+    }
+}
+```
+
+## Common Patterns
+
+Here are some commonly used character patterns:
+
+| Pattern | Description | Example |
+|---------|-------------|------|
+| `[0-9]` | Digits only | 0123456789 |
+| `[A-Za-z]` | Letters only | ABCabc |
+| `[A-Z]` | Uppercase letters | ABC |
+| `[a-z]` | Lowercase letters | abc |
+| `[A-Za-z0-9]` | Alphanumeric | ABC123 |
+| `[A-Za-z ]` | Letters and spaces | Hello World |
+| `[0-9.]` | Decimal numbers | 123.45 |
+| `[0-9-]` | Digits and hyphens | 123-456 |
+| `[A-Za-z0-9_-]` | Alphanumeric with underscore/hyphen | my-value_123 |
+
+## Important Notes
+
+- The pattern is applied **per character** as the user types
+- Characters that don't match the pattern are silently ignored
+- The pattern does not validate the entire value, only individual characters
+- For full value validation, use Vaadin's validator mechanisms in addition to `allowedCharPattern`
+- The pattern uses JavaScript regex syntax (same as HTML5 pattern attribute)
+
+## Related Interfaces
+
+- [HasLocatorElement](/api/shared/has-locator) - Parent interface
+- [HasPrefixElement](/api/shared/has-prefix) - For prefix slot content
+- [HasSuffixElement](/api/shared/has-suffix) - For suffix slot content
+
+## Vaadin Documentation
+
+For more information about the `allowedCharPattern` property, see:
+- [Vaadin Text Field documentation](https://vaadin.com/docs/latest/components/text-field)
+- [Vaadin Number Field documentation](https://vaadin.com/docs/latest/components/number-field)

@@ -1,0 +1,199 @@
+---
+title: HasSuffixElement
+description: Interface for Vaadin components that support suffix slot content
+---
+
+## Overview
+
+`HasSuffixElement` provides utilities to interact with Vaadin components that implement the `HasSuffix` interface, which allows placing content in a `suffix` slot. The suffix typically appears at the end of the component, after the main input or content area.
+
+This mixin interface extends [HasLocatorElement](/api/shared/has-locator) and provides default implementations for accessing, reading, and asserting suffix slot content.
+
+## Interface
+
+```java
+public interface HasSuffixElement extends HasLocatorElement {
+    default Locator getSuffixLocator() { ... }
+    default String getSuffixText() { ... }
+    default void assertSuffixHasText(String text) { ... }
+}
+```
+
+## Methods
+
+### getSuffixLocator()
+
+Returns a locator for the suffix slot content.
+
+```java
+default Locator getSuffixLocator()
+```
+
+**Returns:** `Locator` targeting the first element with `slot="suffix"`
+
+**Implementation:**
+```java
+return getLocator().locator("*[slot=\"suffix\"]").first();
+```
+
+---
+
+### getSuffixText()
+
+Retrieves the text content of the suffix slot.
+
+```java
+default String getSuffixText()
+```
+
+**Returns:** The text content of the suffix element
+
+---
+
+### assertSuffixHasText()
+
+Asserts that the suffix slot has the expected text, or is hidden when null.
+
+```java
+default void assertSuffixHasText(String text)
+```
+
+<ParamField path="text" type="String">
+  Expected text content of the suffix. If `null`, asserts that the suffix is not visible.
+</ParamField>
+
+**Behavior:**
+- If `text` is non-null: Asserts the suffix has exactly that text
+- If `text` is null: Asserts the suffix is not visible
+
+## Implementing Classes
+
+The following element classes implement `HasSuffixElement`:
+
+- `TextFieldElement` - Text input fields
+- `BigDecimalFieldElement` - Decimal number fields
+- `AbstractNumberFieldElement` - Base class for number fields
+- `ButtonElement` - Action buttons
+- `SideNavigationItemElement` - Navigation items
+
+## Usage Examples
+
+### Basic Suffix Access
+
+```java
+import com.microsoft.playwright.Page;
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+
+public class SuffixExample {
+    public void testSuffixContent(Page page) {
+        TextFieldElement weightField = TextFieldElement.getByLabel(page, "Weight");
+        
+        // Get the suffix text (e.g., "kg" unit)
+        String suffixText = weightField.getSuffixText();
+        System.out.println("Unit: " + suffixText);
+        
+        // Assert the suffix displays the expected unit
+        weightField.assertSuffixHasText("kg");
+    }
+}
+```
+
+### Custom Suffix Interactions
+
+```java
+public class CustomSuffixExample {
+    public void clickSuffixIcon(Page page) {
+        TextFieldElement passwordField = TextFieldElement.getByLabel(page, "Password");
+        
+        // Access the suffix locator for custom interactions
+        Locator suffixIcon = passwordField.getSuffixLocator();
+        
+        // Click on an interactive suffix element (e.g., show/hide password icon)
+        suffixIcon.click();
+    }
+}
+```
+
+### Asserting Suffix Visibility
+
+```java
+public class SuffixVisibilityExample {
+    public void testSuffixVisibility(Page page) {
+        TextFieldElement temperatureField = TextFieldElement.getByLabel(page, "Temperature");
+        
+        // Assert suffix is present with text
+        temperatureField.assertSuffixHasText("°C");
+        
+        // After changing settings, assert new suffix
+        // (e.g., user switches to Fahrenheit)
+        temperatureField.assertSuffixHasText("°F");
+    }
+}
+```
+
+### Integration Test Example
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class TextFieldSuffixIT {
+    @Test
+    public void shouldDisplayPercentageSuffix() {
+        TextFieldElement discountField = TextFieldElement.getByLabel(page, "Discount");
+        
+        // Verify the percentage symbol appears as a suffix
+        assertEquals("%", discountField.getSuffixText());
+        
+        // Assert using the built-in assertion method
+        discountField.assertSuffixHasText("%");
+    }
+    
+    @Test
+    public void shouldHideSuffixWhenNotSet() {
+        TextFieldElement plainField = TextFieldElement.getByLabel(page, "Plain Input");
+        
+        // Assert no suffix is visible
+        plainField.assertSuffixHasText(null);
+    }
+    
+    @Test
+    public void shouldInteractWithSuffixButton() {
+        TextFieldElement searchField = TextFieldElement.getByLabel(page, "Search");
+        
+        // Click the search button in the suffix slot
+        searchField.getSuffixLocator().click();
+        
+        // Verify search was triggered
+        // ... additional assertions
+    }
+}
+```
+
+### Button with Suffix Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+
+public class ButtonSuffixExample {
+    public void testButtonWithIcon(Page page) {
+        ButtonElement submitButton = ButtonElement.getByText(page, "Submit");
+        
+        // Check if button has an icon in the suffix slot
+        String suffixContent = submitButton.getSuffixText();
+        
+        // For icon buttons, you might want to check the locator directly
+        Locator iconLocator = submitButton.getSuffixLocator();
+        boolean hasIcon = iconLocator.count() > 0;
+    }
+}
+```
+
+## Related Interfaces
+
+- [HasLocatorElement](/api/shared/has-locator) - Parent interface
+- [HasPrefixElement](/api/shared/has-prefix) - Companion interface for prefix slot content
+
+## Vaadin Documentation
+
+For more information about the Vaadin `HasSuffix` interface, see the [Vaadin Components documentation](https://vaadin.com/docs/latest/components).

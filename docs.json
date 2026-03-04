@@ -26,7 +26,7 @@
           {
             "group": "Get Started",
             "pages": [
-              "introduction",
+              "index",
               "installation",
               "quickstart"
             ]
@@ -145,6 +145,7 @@
           {
             "group": "Shared Interfaces",
             "pages": [
+              "api/shared/has-locator",
               "api/shared/has-input-field",
               "api/shared/has-value",
               "api/shared/has-validation-properties",
@@ -154,10 +155,13 @@
               "api/shared/has-style",
               "api/shared/has-clear-button",
               "api/shared/has-placeholder",
+              "api/shared/has-prefix",
+              "api/shared/has-suffix",
               "api/shared/has-tooltip",
               "api/shared/has-label",
               "api/shared/has-helper",
-              "api/shared/has-aria-label"
+              "api/shared/has-aria-label",
+              "api/shared/has-allowed-char-pattern"
             ]
           }
         ]

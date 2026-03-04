@@ -1,0 +1,170 @@
+---
+title: HasPrefixElement
+description: Interface for Vaadin components that support prefix slot content
+---
+
+## Overview
+
+`HasPrefixElement` provides utilities to interact with Vaadin components that implement the `HasPrefix` interface, which allows placing content in a `prefix` slot. The prefix typically appears at the start of the component, before the main input or content area.
+
+This mixin interface extends [HasLocatorElement](/api/shared/has-locator) and provides default implementations for accessing, reading, and asserting prefix slot content.
+
+## Interface
+
+```java
+public interface HasPrefixElement extends HasLocatorElement {
+    default Locator getPrefixLocator() { ... }
+    default String getPrefixText() { ... }
+    default void assertPrefixHasText(String text) { ... }
+}
+```
+
+## Methods
+
+### getPrefixLocator()
+
+Returns a locator for the prefix slot content.
+
+```java
+default Locator getPrefixLocator()
+```
+
+**Returns:** `Locator` targeting the first element with `slot="prefix"`
+
+**Implementation:**
+```java
+return getLocator().locator("*[slot=\"prefix\"]").first();
+```
+
+---
+
+### getPrefixText()
+
+Retrieves the text content of the prefix slot.
+
+```java
+default String getPrefixText()
+```
+
+**Returns:** The text content of the prefix element
+
+---
+
+### assertPrefixHasText()
+
+Asserts that the prefix slot has the expected text, or is hidden when null.
+
+```java
+default void assertPrefixHasText(String text)
+```
+
+<ParamField path="text" type="String">
+  Expected text content of the prefix. If `null`, asserts that the prefix is not visible.
+</ParamField>
+
+**Behavior:**
+- If `text` is non-null: Asserts the prefix has exactly that text
+- If `text` is null: Asserts the prefix is not visible
+
+## Implementing Classes
+
+The following element classes implement `HasPrefixElement`:
+
+- `TextFieldElement` - Text input fields
+- `BigDecimalFieldElement` - Decimal number fields
+- `AbstractNumberFieldElement` - Base class for number fields
+- `ComboBoxElement` - Combo box selectors
+- `SelectElement` - Select dropdowns
+- `ButtonElement` - Action buttons
+- `SideNavigationItemElement` - Navigation items
+
+## Usage Examples
+
+### Basic Prefix Access
+
+```java
+import com.microsoft.playwright.Page;
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+
+public class PrefixExample {
+    public void testPrefixContent(Page page) {
+        TextFieldElement emailField = TextFieldElement.getByLabel(page, "Email");
+        
+        // Get the prefix text
+        String prefixText = emailField.getPrefixText();
+        System.out.println("Prefix: " + prefixText);
+        
+        // Assert the prefix displays an icon or text
+        emailField.assertPrefixHasText("@");
+    }
+}
+```
+
+### Custom Prefix Interactions
+
+```java
+public class CustomPrefixExample {
+    public void clickPrefixIcon(Page page) {
+        TextFieldElement searchField = TextFieldElement.getByLabel(page, "Search");
+        
+        // Access the prefix locator for custom interactions
+        Locator prefixIcon = searchField.getPrefixLocator();
+        
+        // Click on an interactive prefix element (e.g., a search icon)
+        prefixIcon.click();
+    }
+}
+```
+
+### Asserting Prefix Visibility
+
+```java
+public class PrefixVisibilityExample {
+    public void testPrefixVisibility(Page page) {
+        TextFieldElement phoneField = TextFieldElement.getByLabel(page, "Phone");
+        
+        // Assert prefix is present with text
+        phoneField.assertPrefixHasText("+1");
+        
+        // After clearing or some action, assert prefix is hidden
+        phoneField.assertPrefixHasText(null);
+    }
+}
+```
+
+### Integration Test Example
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class TextFieldPrefixIT {
+    @Test
+    public void shouldDisplayCurrencyPrefix() {
+        TextFieldElement priceField = TextFieldElement.getByLabel(page, "Price");
+        
+        // Verify the currency symbol appears as a prefix
+        assertEquals("$", priceField.getPrefixText());
+        
+        // Assert using the built-in assertion method
+        priceField.assertPrefixHasText("$");
+    }
+    
+    @Test
+    public void shouldHidePrefixWhenNotSet() {
+        TextFieldElement plainField = TextFieldElement.getByLabel(page, "Plain Input");
+        
+        // Assert no prefix is visible
+        priceField.assertPrefixHasText(null);
+    }
+}
+```
+
+## Related Interfaces
+
+- [HasLocatorElement](/api/shared/has-locator) - Parent interface
+- [HasSuffixElement](/api/shared/has-suffix) - Companion interface for suffix slot content
+
+## Vaadin Documentation
+
+For more information about the Vaadin `HasPrefix` interface, see the [Vaadin Components documentation](https://vaadin.com/docs/latest/components).

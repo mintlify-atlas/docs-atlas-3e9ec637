@@ -1,0 +1,97 @@
+---
+title: HasLocatorElement
+description: Base interface for all Drama Finder element wrappers that expose a Playwright Locator
+---
+
+## Overview
+
+`HasLocatorElement` is the foundational interface for all Drama Finder element wrappers. It provides access to the underlying Playwright `Locator` that represents the component's root element in the DOM.
+
+This interface serves as the base contract that all other mixin interfaces extend, enabling composition of element behaviors through Java's interface default methods.
+
+## Interface
+
+```java
+public interface HasLocatorElement {
+    Locator getLocator();
+}
+```
+
+## Methods
+
+### getLocator()
+
+Returns the root Playwright locator for the component.
+
+```java
+Locator getLocator()
+```
+
+**Returns:** The root `Locator` representing this component's DOM element
+
+## Implementing Classes
+
+All Drama Finder element classes implement this interface, either directly or through inheritance:
+
+- `VaadinElement` (base class for all elements)
+- `TextFieldElement`
+- `ButtonElement`
+- `ComboBoxElement`
+- `SelectElement`
+- `MultiSelectComboBoxElement`
+- `BigDecimalFieldElement`
+- `AbstractNumberFieldElement`
+- `SideNavigationItemElement`
+- All other element wrappers in the library
+
+## Usage Example
+
+```java
+import com.microsoft.playwright.Page;
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import org.vaadin.addons.dramafinder.element.shared.HasLocatorElement;
+
+public class BasicLocatorExample {
+    public void demonstrateLocatorAccess(Page page) {
+        // Get an element wrapper
+        TextFieldElement nameField = TextFieldElement.getByLabel(page, "Name");
+        
+        // Access the underlying Playwright locator
+        HasLocatorElement element = nameField;
+        Locator locator = element.getLocator();
+        
+        // Use the locator for custom operations
+        locator.click();
+        locator.hover();
+        
+        // Check attributes on the component root
+        String theme = locator.getAttribute("theme");
+        boolean isVisible = locator.isVisible();
+    }
+}
+```
+
+## Design Pattern
+
+`HasLocatorElement` enables the **Mixin Interface Pattern** used throughout Drama Finder. By requiring only a locator, other interfaces can add default method implementations that build on top of it:
+
+```java
+public interface HasPrefixElement extends HasLocatorElement {
+    default Locator getPrefixLocator() {
+        return getLocator().locator("*[slot=\"prefix\"]").first();
+    }
+}
+```
+
+This approach provides:
+- **Composition over inheritance**: Elements can mix and match capabilities
+- **Code reuse**: Shared behavior is implemented once in the interface
+- **Type safety**: Compile-time verification of available methods
+- **Extensibility**: Easy to add new mixins without modifying existing classes
+
+## Related Interfaces
+
+- [HasPrefixElement](/api/shared/has-prefix) - Extends this interface
+- [HasSuffixElement](/api/shared/has-suffix) - Extends this interface
+- [HasAllowedCharPatternElement](/api/shared/has-allowed-char-pattern) - Extends this interface
+- All other shared mixin interfaces
