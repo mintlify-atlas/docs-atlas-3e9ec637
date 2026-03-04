@@ -1,0 +1,224 @@
+---
+title: ListBoxElement
+description: Playwright element wrapper for Vaadin List Box component
+---
+
+# ListBoxElement
+
+Playwright element wrapper for `<vaadin-list-box>` supporting single and multiple selection, item-level enablement, and label-based lookup.
+
+## Component Tag
+
+`vaadin-list-box`
+
+## Related Tags
+
+- `vaadin-item` - List box item element
+
+## Implements
+
+- `HasAriaLabelElement` - ARIA label support
+- `HasStyleElement` - CSS class and style management
+- `HasTooltipElement` - Tooltip text
+- `HasEnabledElement` - Enable/disable state
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-list-box>` element
+</ParamField>
+
+## Static Factory Methods
+
+### getByLabel
+
+Get a list box by its accessible label.
+
+```java
+ListBoxElement.getByLabel(Page page, String label)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="label" type="String">
+  List box's accessible label (ARIA role: LISTBOX)
+</ParamField>
+
+## Methods
+
+### selectItem
+
+Select an item based on its text. In multiple mode, toggles selection state.
+
+```java
+void selectItem(String item)
+```
+
+<ParamField path="item" type="String">
+  Visible label of the item
+</ParamField>
+
+### getSingleSelectedValue
+
+Get the selected value for single-select list boxes.
+
+```java
+String getSingleSelectedValue()
+```
+
+Returns the text content of the selected item.
+
+### getSelectedValue
+
+Get all selected values for multi-select list boxes.
+
+```java
+List<String> getSelectedValue()
+```
+
+Returns a list of text contents for all selected items.
+
+### isMultiple
+
+Whether the list box is in multiple selection mode.
+
+```java
+boolean isMultiple()
+```
+
+## Assertion Methods
+
+### assertSelectedValue
+
+Assert that the selected values match the expected labels.
+
+```java
+void assertSelectedValue(String... expected)
+```
+
+<ParamField path="expected" type="String...">
+  Expected selected item labels
+</ParamField>
+
+### assertItemEnabled
+
+Assert that a specific item is enabled.
+
+```java
+void assertItemEnabled(String item)
+```
+
+<ParamField path="item" type="String">
+  Item label
+</ParamField>
+
+### assertItemDisabled
+
+Assert that a specific item is disabled.
+
+```java
+void assertItemDisabled(String item)
+```
+
+<ParamField path="item" type="String">
+  Item label
+</ParamField>
+
+### assertMultiple
+
+Assert that multiple selection is enabled.
+
+```java
+void assertMultiple()
+```
+
+### assertSingle
+
+Assert that single selection mode is enabled.
+
+```java
+void assertSingle()
+```
+
+## Usage Examples
+
+### Basic Selection
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Sort by");
+listBox.assertVisible();
+listBox.assertSelectedValue("Most recent first");
+
+listBox.selectItem("Rating: high to low");
+listBox.assertSelectedValue("Rating: high to low");
+```
+
+### Single Selection Mode
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Sort options");
+listBox.assertSingle();
+
+// Clicking same item doesn't unselect in single mode
+listBox.selectItem("Rating: high to low");
+listBox.selectItem("Rating: high to low");
+listBox.assertSelectedValue("Rating: high to low");
+```
+
+### Multiple Selection Mode
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Multiple list");
+listBox.assertMultiple();
+listBox.assertSelectedValue("Most recent first");
+
+// Add to selection
+listBox.selectItem("Rating: high to low");
+listBox.assertSelectedValue("Most recent first", "Rating: high to low");
+
+// Toggle off
+listBox.selectItem("Rating: high to low");
+listBox.assertSelectedValue("Most recent first");
+
+// Unselect all
+listBox.selectItem("Most recent first");
+listBox.assertSelectedValue();
+```
+
+### Check Item State
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Enabled/Disabled Field");
+listBox.assertDisabled();
+listBox.assertItemDisabled("Most recent first");
+listBox.assertItemDisabled("Always disabled");
+
+page.locator("#enable-button").click();
+
+listBox.assertEnabled();
+listBox.assertItemEnabled("Most recent first");
+listBox.assertItemDisabled("Always disabled"); // Still disabled
+```
+
+### ARIA Label
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Invisible label");
+listBox.assertAriaLabel("Invisible label");
+```
+
+### Tooltip
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Sort by");
+listBox.assertTooltipHasText("Tooltip for listbox");
+```
+
+### CSS Class
+
+```java
+ListBoxElement listBox = ListBoxElement.getByLabel(page, "Options");
+listBox.assertCssClass("list-box");
+```

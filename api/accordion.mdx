@@ -1,0 +1,179 @@
+---
+title: AccordionElement
+description: Playwright element wrapper for Vaadin Accordion component
+---
+
+# AccordionElement
+
+Playwright element wrapper for `<vaadin-accordion>` providing helpers to access panels by summary text and assert open/closed state.
+
+## Component Tag
+
+`vaadin-accordion`
+
+## Implements
+
+- `HasStyleElement` - CSS class and style management
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-accordion>` element
+</ParamField>
+
+## Methods
+
+### getPanel
+
+Get a panel by its summary text.
+
+```java
+AccordionPanelElement getPanel(String summary)
+```
+
+<ParamField path="summary" type="String">
+  Panel summary text
+</ParamField>
+
+Returns an `AccordionPanelElement` for the matching panel.
+
+### openPanel
+
+Open a panel by its summary text.
+
+```java
+void openPanel(String summary)
+```
+
+<ParamField path="summary" type="String">
+  Panel summary text
+</ParamField>
+
+### closePanel
+
+Close a panel by its summary text.
+
+```java
+void closePanel(String summary)
+```
+
+<ParamField path="summary" type="String">
+  Panel summary text
+</ParamField>
+
+### isPanelOpened
+
+Whether the panel with the given summary is open.
+
+```java
+boolean isPanelOpened(String summary)
+```
+
+<ParamField path="summary" type="String">
+  Panel summary text
+</ParamField>
+
+### getOpenedPanel
+
+Get the currently opened panel.
+
+```java
+AccordionPanelElement getOpenedPanel()
+```
+
+Returns the `AccordionPanelElement` that is currently open.
+
+## Assertion Methods
+
+### assertPanelCount
+
+Assert the number of panels present in the accordion.
+
+```java
+void assertPanelCount(int count)
+```
+
+<ParamField path="count" type="int">
+  Expected panel count
+</ParamField>
+
+### assertPanelOpened
+
+Assert that the panel with the given summary is open.
+
+```java
+void assertPanelOpened(String summary)
+```
+
+<ParamField path="summary" type="String">
+  Panel summary text
+</ParamField>
+
+### assertPanelClosed
+
+Assert that the panel with the given summary is closed.
+
+```java
+void assertPanelClosed(String summary)
+```
+
+<ParamField path="summary" type="String">
+  Panel summary text
+</ParamField>
+
+## Usage Examples
+
+### Basic Accordion Operations
+
+```java
+AccordionElement accordion = new AccordionElement(page.locator(".custom-css"));
+accordion.assertPanelCount(4);
+
+// Check first panel is open
+AccordionPanelElement panel1 = accordion.getPanel("Panel 1");
+panel1.assertOpened();
+panel1.assertContentVisible();
+```
+
+### Open/Close Panels
+
+```java
+AccordionElement accordion = new AccordionElement(page.locator("vaadin-accordion").first());
+
+AccordionPanelElement panel2 = accordion.getPanel("Panel 2");
+panel2.assertClosed();
+
+// Opening panel 2 closes panel 1
+accordion.openPanel("Panel 2");
+panel1.assertClosed();
+panel2.assertOpened();
+```
+
+### Work with Disabled Panels
+
+```java
+AccordionPanelElement disabledPanel = accordion.getPanel("Disabled Panel");
+disabledPanel.assertDisabled();
+disabledPanel.assertClosed();
+
+// Clicking disabled panel has no effect
+disabledPanel.getSummaryLocator().click();
+disabledPanel.assertClosed();
+```
+
+### Get Currently Opened Panel
+
+```java
+accordion.openPanel("Panel 2");
+AccordionPanelElement openedPanel = accordion.getOpenedPanel();
+assertEquals("Panel 2", openedPanel.getSummaryText());
+```
+
+### Access Panel Content
+
+```java
+AccordionPanelElement panel = accordion.getPanel("Panel 1");
+panel.assertOpened();
+panel.assertContentVisible();
+assertThat(panel.getContentLocator()).hasText("Content 1");
+```

@@ -1,0 +1,310 @@
+---
+title: HasTooltipElement
+description: Utilities to interact with components implementing Vaadin's HasTooltip interface
+---
+
+## Overview
+
+`HasTooltipElement` provides methods for interacting with tooltips on Vaadin components. Tooltips provide additional context or information when users hover over or focus on elements. This interface allows you to locate tooltip content and verify its text in tests.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasTooltipElement`
+
+## Methods
+
+### getTooltipLocator()
+
+```java
+default Locator getTooltipLocator()
+```
+
+Returns a locator for the tooltip content element, which has the ARIA role of `tooltip`. The locator includes hidden elements since tooltips are typically hidden until triggered.
+
+**Returns:** `Locator` - Locator for the first tooltip element with `role="tooltip"`
+
+---
+
+### getTooltipText()
+
+```java
+default String getTooltipText()
+```
+
+Retrieves the text content of the tooltip.
+
+**Returns:** `String` - The tooltip text content
+
+---
+
+### assertTooltipHasText()
+
+```java
+default void assertTooltipHasText(String text)
+```
+
+Asserts that the tooltip has the expected text. When `null` is provided, asserts that the tooltip is not visible.
+
+<ParamField path="text" type="String">
+  The expected tooltip text, or `null` to assert the tooltip is not visible
+</ParamField>
+
+**Throws:** `AssertionError` if the tooltip text does not match or visibility does not match expectation
+
+## Implementing Classes
+
+The following element classes implement `HasTooltipElement`:
+
+- `AvatarElement`
+- `ListBoxElement`
+- `TextFieldElement` (and all subclasses)
+- Any component that uses Vaadin's `HasTooltip` mixin
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+import org.vaadin.addons.dramafinder.element.AvatarElement;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Locator;
+
+public class TooltipTest {
+    void testTooltips(Page page) {
+        AvatarElement avatar = AvatarElement.getByName(page, "John Doe");
+        
+        // Hover to show tooltip
+        avatar.getLocator().hover();
+        
+        // Wait for tooltip to appear
+        page.waitForTimeout(200);
+        
+        // Assert tooltip content
+        avatar.assertTooltipHasText("John Doe - Software Engineer");
+        
+        // Get tooltip text
+        String tooltipText = avatar.getTooltipText();
+        System.out.println("Tooltip: " + tooltipText);
+        
+        // Move away - tooltip should hide
+        page.mouse().move(0, 0);
+        page.waitForTimeout(200);
+        avatar.assertTooltipHasText(null);  // Assert not visible
+    }
+}
+```
+
+## Implementation Details
+
+### ARIA Role Tooltip
+
+The implementation uses ARIA role-based selection to find tooltips:
+
+```java
+getLocator().getByRole(AriaRole.TOOLTIP,
+    new Locator.GetByRoleOptions().setIncludeHidden(true)).first()
+```
+
+The `setIncludeHidden(true)` option is essential because tooltips are typically hidden in the DOM until triggered by user interaction.
+
+### Tooltip Visibility
+
+Tooltips in Vaadin are shown when:
+- The user hovers over the element with a mouse
+- The element receives keyboard focus
+- The tooltip is programmatically triggered
+
+Tooltips automatically hide when:
+- The mouse moves away
+- Focus moves to another element
+- The user presses Escape
+
+### Inner Text Option
+
+The assertion uses `setUseInnerText(true)` to properly handle nested elements within the tooltip:
+
+```java
+assertThat(getTooltipLocator()).hasText(text, 
+    new LocatorAssertions.HasTextOptions().setUseInnerText(true));
+```
+
+## Testing Patterns
+
+### Test Tooltip on Hover
+
+```java
+AvatarElement avatar = AvatarElement.getByName(page, "Alice");
+
+// Initially no tooltip visible
+avatar.assertTooltipHasText(null);
+
+// Hover to trigger tooltip
+avatar.getLocator().hover();
+page.waitForTimeout(200);
+
+// Verify tooltip content
+avatar.assertTooltipHasText("Alice Johnson");
+```
+
+### Test Tooltip on Focus
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Help");
+
+// Focus element with keyboard
+button.focus();
+page.waitForTimeout(200);
+
+// Tooltip should appear
+button.assertTooltipHasText("Click for help documentation");
+
+// Blur to hide tooltip
+button.blur();
+page.waitForTimeout(200);
+button.assertTooltipHasText(null);
+```
+
+### Test Informational Tooltips
+
+```java
+// Test tooltip provides additional context
+TextFieldElement field = TextFieldElement.getByLabel(page, "API Key");
+
+field.getLocator().hover();
+page.waitForTimeout(200);
+
+field.assertTooltipHasText("You can generate an API key in your account settings");
+```
+
+### Test Tooltip Accessibility
+
+```java
+// Verify tooltip is keyboard accessible
+ButtonElement icon = ButtonElement.getByLabel(page, "Information");
+
+// Tab to element
+page.keyboard().press("Tab");
+icon.assertIsFocused();
+
+// Tooltip appears on focus
+page.waitForTimeout(200);
+icon.assertTooltipHasText("Additional information about this feature");
+```
+
+### Test Tooltip Position
+
+```java
+// While this interface doesn't test position directly,
+// you can verify tooltip locator is present
+ButtonElement button = ButtonElement.getByText(page, "Save");
+button.getLocator().hover();
+
+Locator tooltip = button.getTooltipLocator();
+assertThat(tooltip).isVisible();
+
+// Could check position if needed
+Double y = (Double) tooltip.evaluate("el => el.getBoundingClientRect().y");
+// Verify y is above or below button as expected
+```
+
+## Best Practices
+
+### Wait for Tooltip Appearance
+
+Tooltips often have a delay before appearing. Always wait briefly after hovering:
+
+```java
+element.getLocator().hover();
+page.waitForTimeout(200);  // Typical tooltip delay
+element.assertTooltipHasText("Expected text");
+```
+
+### Test Tooltip Dismissal
+
+Verify tooltips hide when appropriate:
+
+```java
+// Show tooltip
+element.getLocator().hover();
+page.waitForTimeout(200);
+element.assertTooltipHasText("Tooltip");
+
+// Hide tooltip
+page.mouse().move(0, 0);
+page.waitForTimeout(200);
+element.assertTooltipHasText(null);
+```
+
+### Use Tooltips for Non-Critical Info
+
+Tooltips should enhance, not replace, essential information:
+
+```java
+// Good: Button has clear text, tooltip adds context
+ButtonElement save = ButtonElement.getByText(page, "Save");
+save.getLocator().hover();
+save.assertTooltipHasText("Save changes (Ctrl+S)");
+
+// Bad: Critical info only in tooltip
+// Icon button with no accessible name relying solely on tooltip
+```
+
+### Test Tooltip Content Quality
+
+Verify tooltips provide helpful information:
+
+```java
+// Helpful: Explains what will happen
+button.assertTooltipHasText("Delete this item permanently");
+
+// Less helpful: Repeats visible text
+// button.assertTooltipHasText("Delete");
+```
+
+### Consider Screen Readers
+
+Tooltips should be accessible to screen readers. The ARIA `tooltip` role helps with this:
+
+```java
+// Verify tooltip has proper ARIA role
+Locator tooltip = element.getTooltipLocator();
+assertThat(tooltip).hasAttribute("role", "tooltip");
+```
+
+## Common Use Cases
+
+### Icon Button Descriptions
+
+```java
+ButtonElement iconButton = ButtonElement.getByLabel(page, "Edit");
+iconButton.getLocator().hover();
+iconButton.assertTooltipHasText("Edit item");
+```
+
+### Disabled Element Explanations
+
+```java
+ButtonElement disabledButton = ButtonElement.getByText(page, "Submit");
+disabledButton.assertDisabled();
+disabledButton.getLocator().hover();
+disabledButton.assertTooltipHasText("Complete all required fields to submit");
+```
+
+### Abbreviation Expansions
+
+```java
+AvatarElement avatar = AvatarElement.getByInitials(page, "CEO");
+avatar.getLocator().hover();
+avatar.assertTooltipHasText("Chief Executive Officer");
+```
+
+### Keyboard Shortcut Hints
+
+```java
+ButtonElement save = ButtonElement.getByText(page, "Save");
+save.getLocator().hover();
+save.assertTooltipHasText("Save (Ctrl+S)");
+```
+
+## Related Interfaces
+
+- [HasAriaLabelElement](/api/shared/has-aria-label) - For accessible names on elements
+- [HasHelperElement](/api/shared/has-helper) - For persistent help text below fields
+- [FocusableElement](/api/shared/focusable) - Tooltips often appear on focus

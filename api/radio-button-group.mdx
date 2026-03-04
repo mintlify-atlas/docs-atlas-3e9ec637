@@ -1,0 +1,158 @@
+---
+title: RadioButtonGroupElement
+description: Playwright element wrapper for Vaadin RadioButtonGroup component
+---
+
+# RadioButtonGroupElement
+
+Playwright element wrapper for `<vaadin-radio-group>`. Provides helpers to select by label/value and assert selected state.
+
+## Component Tag
+
+`vaadin-radio-group`
+
+## Implements
+
+- `HasLabelElement`
+- `HasEnabledElement`
+- `HasHelperElement`
+- `HasValidationPropertiesElement`
+
+## Factory Methods
+
+### getByLabel
+
+```java
+public static RadioButtonGroupElement getByLabel(Page page, String label)
+```
+
+Get the radio button group by its accessible label. Uses ARIA role `RADIOGROUP`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the radio group
+</ParamField>
+
+**Returns:** The matching `RadioButtonGroupElement`
+
+## Constructor
+
+### RadioButtonGroupElement
+
+```java
+public RadioButtonGroupElement(Locator locator)
+```
+
+Create a new `RadioButtonGroupElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-radio-group>` element
+</ParamField>
+
+## Methods
+
+### selectByLabel
+
+```java
+public void selectByLabel(String label)
+```
+
+Select a radio button by its label text.
+
+<ParamField path="label" type="String" required>
+  The label text of the radio button to select
+</ParamField>
+
+### selectByValue
+
+```java
+public void selectByValue(String value)
+```
+
+Select a radio button by its value.
+
+<ParamField path="value" type="String" required>
+  The value of the radio button to select
+</ParamField>
+
+### getRadioButtonByLabel
+
+```java
+public RadioButtonElement getRadioButtonByLabel(String label)
+```
+
+Get a specific radio button by its label within the group.
+
+<ParamField path="label" type="String" required>
+  The label text of the radio button
+</ParamField>
+
+**Returns:** The matching `RadioButtonElement`
+
+### setValue
+
+```java
+public void setValue(String value)
+```
+
+Set the selected value by label.
+
+<ParamField path="value" type="String" required>
+  The label of the radio button to select
+</ParamField>
+
+### assertValue
+
+```java
+public void assertValue(String value)
+```
+
+Assert the selected value by label.
+
+<ParamField path="value" type="String">
+  Expected label of the selected radio button, or `null`/empty for no selection
+</ParamField>
+
+## Usage Examples
+
+### Basic Selection
+
+```java
+RadioButtonGroupElement group = RadioButtonGroupElement.getByLabel(page, "Basic RadioButtonGroup");
+group.assertVisible();
+group.assertEnabled();
+group.assertValue(null);
+
+group.selectByLabel("Option 2");
+group.assertValue("Option 2");
+
+group.selectByLabel("Option 3");
+group.assertValue("Option 3");
+```
+
+### Pre-selected Value
+
+```java
+RadioButtonGroupElement group = RadioButtonGroupElement.getByLabel(page, "Pre-selected Value");
+group.assertVisible();
+group.assertValue("Option 2");
+```
+
+### Disabled State
+
+```java
+RadioButtonGroupElement group = RadioButtonGroupElement.getByLabel(page, "Disabled RadioButtonGroup");
+group.assertVisible();
+group.assertDisabled();
+```
+
+### Helper Text
+
+```java
+RadioButtonGroupElement group = RadioButtonGroupElement.getByLabel(page, "Helper Text");
+group.assertVisible();
+group.assertHelperHasText("This is a helper text");
+```

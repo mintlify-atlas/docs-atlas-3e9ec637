@@ -1,0 +1,171 @@
+---
+title: BigDecimalFieldElement
+description: Playwright element wrapper for Vaadin big decimal fields
+---
+
+## Overview
+
+The `BigDecimalFieldElement` class is a Playwright wrapper for the `<vaadin-big-decimal-field>` component. It provides methods to interact with high-precision decimal input fields.
+
+## Component Tag
+
+`<vaadin-big-decimal-field>`
+
+## Extends
+
+- `VaadinElement`
+
+## Implements
+
+- `HasValidationPropertiesElement` - Validation state and error messages
+- `HasInputFieldElement` - Value, label, helper text, and styling
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasClearButtonElement` - Clear button functionality
+- `HasPlaceholderElement` - Placeholder text
+- `HasAllowedCharPatternElement` - Character input restrictions
+- `HasThemeElement` - Theme variants
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-big-decimal-field>` element
+</ParamField>
+
+```java
+public BigDecimalFieldElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel (Page)
+
+Get a big decimal field by its accessible label. Uses ARIA role `textbox`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+```java
+public static BigDecimalFieldElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+BigDecimalFieldElement bigDecimalField = BigDecimalFieldElement.getByLabel(page, "Amount");
+bigDecimalField.setValue("123.456789");
+bigDecimalField.assertValue("123.456789");
+```
+
+### getByLabel (Locator)
+
+Get a big decimal field by its accessible label within a scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+```java
+public static BigDecimalFieldElement getByLabel(Locator locator, String label)
+```
+
+## Inherited Methods
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+- `getInputLocator()` - Get input element locator
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert field is valid
+- `assertInvalid()` - Assert field is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `HasClearButtonElement`:
+- `clickClearButton()` - Click the clear button
+- `isClearButtonVisible()` - Check if clear button is visible
+- `assertClearButtonVisible()` - Assert clear button is visible
+- `assertClearButtonNotVisible()` - Assert clear button is not visible
+
+From `HasPlaceholderElement`:
+- `getPlaceholder()` - Get placeholder text
+- `setPlaceholder(String placeholder)` - Set placeholder text
+- `assertPlaceholder(String placeholder)` - Assert placeholder matches
+
+From `FocusableElement`:
+- `focus()` - Focus the field
+- `blur()` - Blur the field
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert field has focus
+- `assertIsNotFocused()` - Assert field does not have focus
+
+From `HasLabelElement`:
+- `getLabel()` - Get label text
+- `assertLabel(String label)` - Assert label text
+- `getLabelLocator()` - Get label locator
+
+From `HasHelperElement`:
+- `getHelperText()` - Get helper text
+- `assertHelperHasText(String text)` - Assert helper text
+- `getHelperLocator()` - Get helper locator
+
+From `HasPrefixElement`:
+- `getPrefixText()` - Get prefix text
+- `assertPrefixHasText(String text)` - Assert prefix text
+- `getPrefixLocator()` - Get prefix locator
+
+From `HasSuffixElement`:
+- `getSuffixText()` - Get suffix text
+- `assertSuffixHasText(String text)` - Assert suffix text
+- `getSuffixLocator()` - Get suffix locator
+
+## Complete Example
+
+```java
+@Test
+public void testBigDecimalField() {
+    // Find big decimal field by label
+    BigDecimalFieldElement bigDecimalField = BigDecimalFieldElement.getByLabel(page, "Amount");
+    bigDecimalField.assertVisible();
+    bigDecimalField.assertHelperHasText("Enter a precise decimal value");
+    
+    // Check initial value
+    bigDecimalField.assertValue("123.456789");
+    
+    // Set a new value with high precision
+    String newValue = "98765.4321";
+    bigDecimalField.setValue(newValue);
+    bigDecimalField.assertValue(newValue);
+    bigDecimalField.assertValid();
+}
+
+@Test
+public void testBigDecimalFieldValidation() {
+    BigDecimalFieldElement bigDecimalField = BigDecimalFieldElement.getByLabel(page, "Validated Amount");
+    bigDecimalField.assertVisible();
+    
+    // Test valid value
+    bigDecimalField.setValue("12345.6789012345");
+    bigDecimalField.assertValid();
+    
+    // Test clearing
+    bigDecimalField.clear();
+    bigDecimalField.assertValue("");
+}
+```

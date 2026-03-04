@@ -1,0 +1,304 @@
+---
+title: HasLabelElement
+description: Mixin interface for components that render a visible label
+---
+
+## Overview
+
+`HasLabelElement` provides methods for interacting with visible label elements in Vaadin components. Labels are essential for accessibility and usability, providing clear identification of form fields and other interactive elements.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasLabelElement`
+
+## Methods
+
+### getLabelLocator()
+
+```java
+default Locator getLabelLocator()
+```
+
+Returns a locator for the visible label element. By default, this targets the first `<label>` element within the component.
+
+**Returns:** `Locator` - Locator for the label element
+
+---
+
+### getLabel()
+
+```java
+default String getLabel()
+```
+
+Retrieves the text content of the label.
+
+**Returns:** `String` - The label text
+
+---
+
+### assertLabel()
+
+```java
+default void assertLabel(String label)
+```
+
+Asserts that the label text matches the expected value. When `null` is provided, asserts that the label is hidden.
+
+<ParamField path="label" type="String">
+  The expected label text, or `null` to assert the label is hidden
+</ParamField>
+
+**Throws:** `AssertionError` if the label text does not match or visibility does not match expectation
+
+## Implementing Classes
+
+The following element classes implement `HasLabelElement`:
+
+- All text input components (via `HasInputFieldElement`)
+- `RadioButtonGroupElement`
+- `SideNavigationElement`
+- `SideNavigationItemElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import org.vaadin.addons.dramafinder.element.RadioButtonGroupElement;
+import com.microsoft.playwright.Page;
+
+public class LabelTest {
+    void testLabels(Page page) {
+        TextFieldElement nameField = TextFieldElement.getByLabel(page, "Full Name");
+        RadioButtonGroupElement gender = RadioButtonGroupElement.getByLabel(page, "Gender");
+        
+        // Assert label text
+        nameField.assertLabel("Full Name");
+        gender.assertLabel("Gender");
+        
+        // Get label text
+        String label = nameField.getLabel();
+        System.out.println("Field label: " + label);
+        
+        // Test field without visible label
+        TextFieldElement search = TextFieldElement.getByLabel(page, "Search");
+        search.assertLabel(null);  // Label may be hidden if using aria-label
+    }
+}
+```
+
+## Implementation Details
+
+### Label Locator Strategy
+
+The default implementation targets the first `<label>` element within the component:
+
+```java
+getLocator().locator("label").first()
+```
+
+This works for most Vaadin components that render labels in their shadow DOM.
+
+### Inner Text Usage
+
+The `assertLabel()` method uses `setUseInnerText(true)` to properly handle nested elements within labels:
+
+```java
+assertThat(getLabelLocator()).hasText(label, 
+    new LocatorAssertions.HasTextOptions().setUseInnerText(true));
+```
+
+This ensures that labels with rich content (spans, icons, etc.) are correctly matched.
+
+### Null Handling
+
+When `assertLabel(null)` is called, the method asserts that the label is hidden rather than absent:
+
+```java
+if (label != null) {
+    assertThat(getLabelLocator()).hasText(label, ...);
+} else {
+    assertThat(getLabelLocator()).isHidden();
+}
+```
+
+This distinguishes between:
+- No label element (would cause an error)
+- Hidden label element (passes the assertion)
+
+## Testing Patterns
+
+### Test Label Content
+
+```java
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email Address");
+email.assertLabel("Email Address");
+
+TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+password.assertLabel("Password");
+```
+
+### Test Required Field Indicators
+
+```java
+// Labels may include required indicators
+TextFieldElement required = TextFieldElement.getByLabel(page, "Username");
+required.assertLabel("Username");  // May show "Username *" or similar
+```
+
+### Test Label Visibility
+
+```java
+// Some fields may hide labels and use aria-label instead
+TextFieldElement iconField = TextFieldElement.getByLabel(page, "Search");
+
+// If label is visually hidden but aria-label is present
+iconField.assertLabel(null);  // Visual label is hidden
+```
+
+### Test Label Internationalization
+
+```java
+// Test labels in different languages
+page.navigate("http://localhost:8080?lang=es");
+
+TextFieldElement nombre = TextFieldElement.getByLabel(page, "Nombre");
+nombre.assertLabel("Nombre");
+
+page.navigate("http://localhost:8080?lang=en");
+
+TextFieldElement name = TextFieldElement.getByLabel(page, "Name");
+name.assertLabel("Name");
+```
+
+### Test Dynamic Label Changes
+
+```java
+RadioButtonGroupElement options = RadioButtonGroupElement.getByLabel(page, "Options");
+options.assertLabel("Options");
+
+// Selecting an option might change the label
+CheckboxElement advanced = CheckboxElement.getByLabel(page, "Advanced mode");
+advanced.setChecked(true);
+
+options.assertLabel("Advanced Options");
+```
+
+## Best Practices
+
+### Always Provide Visible Labels
+
+For accessibility, most form fields should have visible labels:
+
+```java
+// Good: Visible label
+field.assertLabel("Email Address");
+
+// Use with caution: Hidden label (only with aria-label)
+// field.assertLabel(null);
+```
+
+### Use Descriptive Labels
+
+Test that labels clearly describe the field purpose:
+
+```java
+// Good: Clear and descriptive
+field.assertLabel("Email Address");
+
+// Less clear: Too brief
+// field.assertLabel("Email");
+```
+
+### Test Label-Field Association
+
+Verify labels are properly associated with their fields:
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Username");
+
+// The fact that getByLabel() finds the field confirms association
+field.assertLabel("Username");
+field.assertEnabled();
+```
+
+### Don't Confuse Label with Placeholder
+
+Labels and placeholders serve different purposes:
+
+```java
+// Label: Persistent field identification
+field.assertLabel("Email Address");
+
+// Placeholder: Example or hint (disappears on input)
+field.assertPlaceholder("user@example.com");
+```
+
+## Accessibility Considerations
+
+### Label for Screen Readers
+
+Labels are crucial for screen reader accessibility. The `<label>` element should be properly associated with the input:
+
+```java
+// Vaadin handles this automatically, but verify in tests
+TextFieldElement field = TextFieldElement.getByLabel(page, "Name");
+field.assertLabel("Name");
+
+// The field should be findable by its label
+assertThat(field.getLocator()).isVisible();
+```
+
+### Required Field Indication
+
+Test that required fields are clearly marked in labels:
+
+```java
+TextFieldElement required = TextFieldElement.getByLabel(page, "Email");
+// Some designs show asterisk or "(required)" in label
+String labelText = required.getLabel();
+assertTrue(labelText.contains("Email"));
+```
+
+### Label vs ARIA Label
+
+Visible labels (`HasLabelElement`) are different from ARIA labels (`HasAriaLabelElement`):
+
+```java
+// Visible label (rendered in UI)
+field.assertLabel("Search");
+
+// ARIA label (for screen readers, may differ from visible label)
+// field.assertAriaLabel("Search products and categories");
+```
+
+## Common Use Cases
+
+### Form Field Labels
+
+```java
+TextFieldElement firstName = TextFieldElement.getByLabel(page, "First Name");
+firstName.assertLabel("First Name");
+
+TextFieldElement lastName = TextFieldElement.getByLabel(page, "Last Name");
+lastName.assertLabel("Last Name");
+```
+
+### Radio Button Group Labels
+
+```java
+RadioButtonGroupElement payment = RadioButtonGroupElement.getByLabel(page, "Payment Method");
+payment.assertLabel("Payment Method");
+```
+
+### Navigation Item Labels
+
+```java
+SideNavigationItemElement dashboard = SideNavigationItemElement.getByLabel(page, "Dashboard");
+dashboard.assertLabel("Dashboard");
+```
+
+## Related Interfaces
+
+- [HasAriaLabelElement](/api/shared/has-aria-label) - For accessible names (may differ from visible label)
+- [HasHelperElement](/api/shared/has-helper) - For additional help text below the field
+- [HasPlaceholderElement](/api/shared/has-placeholder) - For placeholder text within the field
+- [HasInputFieldElement](/api/shared/has-input-field) - Composite interface that includes label support

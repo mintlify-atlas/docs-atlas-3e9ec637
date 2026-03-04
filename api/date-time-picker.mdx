@@ -1,0 +1,383 @@
+---
+title: DateTimePickerElement
+description: Playwright element wrapper for Vaadin DateTimePicker component
+---
+
+# DateTimePickerElement
+
+Playwright element wrapper for `<vaadin-date-time-picker>`. Composes a `DatePickerElement` and `TimePickerElement` and exposes helpers to interact using `LocalDateTime`.
+
+## Component Tag
+
+`vaadin-date-time-picker`
+
+## Implements
+
+- `HasInputFieldElement`
+- `HasValidationPropertiesElement`
+- `HasClearButtonElement`
+- `HasPlaceholderElement`
+- `HasThemeElement`
+- `FocusableElement`
+- `HasAriaLabelElement`
+- `HasEnabledElement`
+- `HasTooltipElement`
+- `HasLabelElement`
+- `HasHelperElement`
+
+## Factory Methods
+
+### getByLabel (Page)
+
+```java
+public static DateTimePickerElement getByLabel(Page page, String label)
+```
+
+Get the `DateTimePickerElement` by its label. Uses ARIA role `COMBOBOX`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `DateTimePickerElement`
+
+### getByLabel (Locator)
+
+```java
+public static DateTimePickerElement getByLabel(Locator locator, String label)
+```
+
+Get the `DateTimePickerElement` by its label within a given scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `DateTimePickerElement`
+
+## Constructor
+
+### DateTimePickerElement
+
+```java
+public DateTimePickerElement(Locator locator)
+```
+
+Create a new `DateTimePickerElement`. Internally composes `DatePickerElement` and `TimePickerElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-date-time-picker>` element
+</ParamField>
+
+## Methods
+
+### setValue (LocalDateTime)
+
+```java
+public void setValue(LocalDateTime date)
+```
+
+Set the value using a `LocalDateTime`.
+
+<ParamField path="date" type="LocalDateTime" required>
+  The date-time to set
+</ParamField>
+
+### setValue (String)
+
+```java
+@Override
+public void setValue(String value)
+```
+
+Set the value of the input.
+
+<ParamField path="value" type="String" required>
+  Value formatted as in the view (dd/mm/yyyy hh:mm)
+</ParamField>
+
+### getValueAsLocalDateTime
+
+```java
+public LocalDateTime getValueAsLocalDateTime()
+```
+
+Get the current value as a `LocalDateTime`.
+
+**Returns:** The parsed value or `null` when empty
+
+### setDate
+
+```java
+public void setDate(String date)
+```
+
+Set only the date part (string input) and dispatch change events.
+
+<ParamField path="date" type="String" required>
+  The date string to set
+</ParamField>
+
+### setTime
+
+```java
+public void setTime(String date)
+```
+
+Set only the time part (string input) and dispatch change events.
+
+<ParamField path="date" type="String" required>
+  The time string to set
+</ParamField>
+
+### assertValue (String)
+
+```java
+@Override
+public void assertValue(String value)
+```
+
+Assert that the input value equals the provided string.
+
+<ParamField path="value" type="String" required>
+  Expected value formatted as in the view (dd/mm/yyyy hh:mm)
+</ParamField>
+
+### assertValue (LocalDateTime)
+
+```java
+public void assertValue(LocalDateTime value)
+```
+
+Assert that the value equals the provided date-time.
+
+<ParamField path="value" type="LocalDateTime">
+  Expected `LocalDateTime` or `null` for empty
+</ParamField>
+
+### assertDateValue
+
+```java
+public void assertDateValue(String date)
+```
+
+Assert the date sub-field value equals the expected string.
+
+<ParamField path="date" type="String" required>
+  Expected date string
+</ParamField>
+
+### assertTimeValue
+
+```java
+public void assertTimeValue(String time)
+```
+
+Assert the time sub-field value equals the expected string.
+
+<ParamField path="time" type="String" required>
+  Expected time string
+</ParamField>
+
+### getAriaLabel
+
+```java
+@Override
+public String getAriaLabel()
+```
+
+Get the ARIA label from the date picker sub-field.
+
+**Returns:** The ARIA label or `null` if not set
+
+### assertAriaLabel
+
+```java
+@Override
+public void assertAriaLabel(String ariaLabel)
+```
+
+Assert the ARIA label on both date and time sub-fields.
+
+<ParamField path="ariaLabel" type="String" required>
+  Expected ARIA label
+</ParamField>
+
+### getFocusLocator
+
+```java
+@Override
+public Locator getFocusLocator()
+```
+
+Get the locator to use for focus operations.
+
+**Returns:** The date picker input locator
+
+### isEnabled
+
+```java
+@Override
+public boolean isEnabled()
+```
+
+Check whether both date and time pickers are enabled.
+
+**Returns:** `true` when both are enabled
+
+### assertEnabled
+
+```java
+@Override
+public void assertEnabled()
+```
+
+Assert that both date and time pickers are enabled.
+
+### assertDisabled
+
+```java
+@Override
+public void assertDisabled()
+```
+
+Assert that both date and time pickers are disabled.
+
+## Usage Examples
+
+### Basic DateTime Selection
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Appointment date");
+dateTimePicker.assertVisible();
+dateTimePicker.assertHelperHasText("Enter the appointment date and time");
+
+LocalDateTime testDate = LocalDateTime.of(2025, 9, 20, 10, 0);
+dateTimePicker.setValue(testDate);
+dateTimePicker.assertValue(testDate);
+```
+
+### Setting Date and Time Separately
+
+```java
+DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Appointment date");
+LocalDateTime testDate = LocalDateTime.of(2025, 9, 20, 10, 0);
+
+dateTimePicker.setDate(dateFormatter.format(testDate));
+dateTimePicker.setTime(timeFormatter.format(testDate));
+
+dateTimePicker.assertDateValue(dateFormatter.format(testDate));
+dateTimePicker.assertTimeValue(timeFormatter.format(testDate));
+dateTimePicker.assertValue(testDate);
+```
+
+### Validation on Incomplete Input
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Appointment date");
+DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+LocalDateTime testDate = LocalDateTime.of(2025, 9, 20, 10, 0);
+dateTimePicker.setDate(dateFormatter.format(testDate));
+dateTimePicker.setTime(timeFormatter.format(testDate));
+dateTimePicker.assertValid();
+
+// Clear time to make it incomplete
+DateTimePickerElement secondPicker = DateTimePickerElement.getByLabel(page, "Vacation date");
+secondPicker.focus();
+dateTimePicker.setTime("");
+dateTimePicker.assertInvalid();
+```
+
+### Min/Max Validation
+
+```java
+DateTimePickerElement datePicker = DateTimePickerElement.getByLabel(page, "Vacation date");
+LocalDateTime startDate = LocalDateTime.of(2025, 9, 18, 14, 30);
+LocalDateTime initialDate = startDate.plusDays(7);
+LocalDateTime maxDate = startDate.plusDays(30);
+
+datePicker.assertValue(initialDate);
+
+// Valid date within bounds
+LocalDateTime validDate = startDate.plusDays(15);
+datePicker.setValue(validDate);
+datePicker.assertValue(validDate);
+datePicker.assertValid();
+
+// Invalid date (after max)
+LocalDateTime invalidDate = maxDate.plusDays(1);
+datePicker.setValue(invalidDate);
+datePicker.assertInvalid();
+datePicker.assertErrorMessage("Maximum exceeded.");
+
+// Invalid date (before min)
+LocalDateTime anotherInvalidDate = startDate.minusDays(1);
+datePicker.setValue(anotherInvalidDate);
+datePicker.assertInvalid();
+datePicker.assertErrorMessage("Minimum exceeded.");
+
+// Set valid value again
+datePicker.setValue(initialDate);
+datePicker.assertValid();
+```
+
+### Theme
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Appointment date");
+dateTimePicker.assertVisible();
+dateTimePicker.assertTheme("small");
+```
+
+### Focus
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Appointment date");
+DateTimePickerElement secondPicker = DateTimePickerElement.getByLabel(page, "Vacation date");
+
+dateTimePicker.assertIsFocused();
+secondPicker.assertIsNotFocused();
+secondPicker.focus();
+secondPicker.assertIsFocused();
+dateTimePicker.assertIsNotFocused();
+```
+
+### ARIA Label
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Invisible label");
+dateTimePicker.assertVisible();
+dateTimePicker.assertAriaLabel("Invisible label");
+```
+
+### Enabled/Disabled
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Enabled/Disabled Field");
+dateTimePicker.assertDisabled();
+
+page.locator("#enable-disable-button").click();
+
+dateTimePicker.assertEnabled();
+```
+
+### Tooltip
+
+```java
+DateTimePickerElement dateTimePicker = DateTimePickerElement.getByLabel(page, "Appointment date");
+dateTimePicker.assertVisible();
+dateTimePicker.assertTooltipHasText("Tooltip for datetimepicker");
+```

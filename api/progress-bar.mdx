@@ -1,0 +1,262 @@
+---
+title: ProgressBarElement
+description: Playwright element wrapper for Vaadin Progress Bar component
+---
+
+# ProgressBarElement
+
+Playwright element wrapper for `<vaadin-progress-bar>` supporting value/min/max setters and assertions and indeterminate state.
+
+## Component Tag
+
+`vaadin-progress-bar`
+
+## Implements
+
+- `HasThemeElement` - Theme variant support
+- `HasStyleElement` - CSS class and style management
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-progress-bar>` element
+</ParamField>
+
+## Property Methods
+
+### getValue
+
+Current numeric value parsed from `aria-valuenow`.
+
+```java
+double getValue()
+```
+
+Returns the current progress value.
+
+### setValue
+
+Set the progress bar value.
+
+```java
+void setValue(double value)
+```
+
+<ParamField path="value" type="double">
+  Progress value to set
+</ParamField>
+
+### getMin
+
+Get the minimum value.
+
+```java
+Double getMin()
+```
+
+Returns the min value, or null if not set.
+
+### setMin
+
+Set the minimum value.
+
+```java
+void setMin(double min)
+```
+
+<ParamField path="min" type="double">
+  Minimum value to set
+</ParamField>
+
+### getMax
+
+Get the maximum value.
+
+```java
+Double getMax()
+```
+
+Returns the max value, or null if not set.
+
+### setMax
+
+Set the maximum value.
+
+```java
+void setMax(double max)
+```
+
+<ParamField path="max" type="double">
+  Maximum value to set
+</ParamField>
+
+### isIndeterminate
+
+Whether the bar is indeterminate.
+
+```java
+boolean isIndeterminate()
+```
+
+### setIndeterminate
+
+Set the indeterminate state.
+
+```java
+void setIndeterminate(boolean indeterminate)
+```
+
+<ParamField path="indeterminate" type="boolean">
+  Whether to show indeterminate state
+</ParamField>
+
+## Assertion Methods
+
+### assertValue
+
+Assert that the numeric value matches.
+
+```java
+void assertValue(Double expected)
+```
+
+<ParamField path="expected" type="Double">
+  Expected value, or null to assert undefined
+</ParamField>
+
+### assertMin
+
+Assert that min matches the expected value.
+
+```java
+void assertMin(double min)
+```
+
+<ParamField path="min" type="double">
+  Expected minimum value
+</ParamField>
+
+### assertMax
+
+Assert that max matches the expected value.
+
+```java
+void assertMax(double max)
+```
+
+<ParamField path="max" type="double">
+  Expected maximum value
+</ParamField>
+
+### assertIndeterminate
+
+Assert indeterminate state.
+
+```java
+void assertIndeterminate()
+```
+
+### assertNotIndeterminate
+
+Assert not indeterminate.
+
+```java
+void assertNotIndeterminate()
+```
+
+## Usage Examples
+
+### Basic Progress Bar
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(page.locator("#progress-bar"));
+progressBar.assertVisible();
+progressBar.assertValue(0.5);
+progressBar.assertNotIndeterminate();
+```
+
+### Indeterminate Progress Bar
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(
+    page.locator("#indeterminate-progress-bar")
+);
+progressBar.assertVisible();
+progressBar.assertIndeterminate();
+```
+
+### Progress Bar with Min/Max
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(
+    page.locator("#min-max-progress-bar")
+);
+
+progressBar.assertMin(10.50);
+progressBar.assertMax(100);
+progressBar.assertValue(50.0);
+```
+
+### Update Progress Value
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(page.locator("#progress-bar"));
+
+progressBar.setValue(0.75);
+progressBar.assertValue(0.75);
+
+double currentValue = progressBar.getValue();
+assertEquals(0.75, currentValue, 0.01);
+```
+
+### Set Min and Max
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(page.locator("#progress-bar"));
+
+progressBar.setMin(0);
+progressBar.assertMin(0.0);
+
+progressBar.setMax(200);
+progressBar.assertMax(200.0);
+
+progressBar.setValue(100);
+progressBar.assertValue(100.0);
+```
+
+### Toggle Indeterminate State
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(page.locator("#progress-bar"));
+
+progressBar.assertNotIndeterminate();
+
+progressBar.setIndeterminate(true);
+progressBar.assertIndeterminate();
+
+boolean isIndeterminate = progressBar.isIndeterminate();
+assertTrue(isIndeterminate);
+```
+
+### Check Progress State
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(page.locator("#progress-bar"));
+
+if (progressBar.isIndeterminate()) {
+    System.out.println("Progress is indeterminate");
+} else {
+    double value = progressBar.getValue();
+    double max = progressBar.getMax();
+    double percent = (value / max) * 100;
+    System.out.println("Progress: " + percent + "%");
+}
+```
+
+### Progress Bar with Theme
+
+```java
+ProgressBarElement progressBar = new ProgressBarElement(page.locator("#progress-bar"));
+progressBar.assertTheme("success");
+progressBar.assertValue(1.0);
+```

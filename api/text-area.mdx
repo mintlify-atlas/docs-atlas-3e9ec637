@@ -1,0 +1,178 @@
+---
+title: TextAreaElement
+description: Playwright element wrapper for Vaadin text areas
+---
+
+## Overview
+
+The `TextAreaElement` class is a Playwright wrapper for the `<vaadin-text-area>` component. It extends `TextFieldElement` with multi-line text input capabilities.
+
+## Component Tag
+
+`<vaadin-text-area>`
+
+## Extends
+
+- `TextFieldElement`
+
+## Inherited Interfaces
+
+- `HasValidationPropertiesElement` - Validation state and error messages
+- `HasInputFieldElement` - Value, label, helper text, and styling
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasClearButtonElement` - Clear button functionality
+- `HasPlaceholderElement` - Placeholder text
+- `HasAllowedCharPatternElement` - Character input restrictions
+- `HasThemeElement` - Theme variants
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-text-area>` element
+</ParamField>
+
+```java
+public TextAreaElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel
+
+Get a text area by its accessible label. Uses ARIA role `textbox`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the text area
+</ParamField>
+
+```java
+public static TextAreaElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+TextAreaElement textArea = TextAreaElement.getByLabel(page, "Description");
+textArea.setValue("A detailed description...");
+textArea.assertValue("A detailed description...");
+```
+
+## Methods
+
+### getInputLocator
+
+Get the textarea input locator. Overrides the parent method to return the textarea slot element.
+
+```java
+public Locator getInputLocator()
+```
+
+**Returns:** Locator for the `slot="textarea"` element
+
+## Inherited Methods
+
+From `TextFieldElement`:
+- `getMinLength()` - Get minimum length
+- `setMinLength(int min)` - Set minimum length
+- `assertMinLength(Integer min)` - Assert minimum length
+- `getMaxLength()` - Get maximum length
+- `setMaxLength(int max)` - Set maximum length
+- `assertMaxLength(Integer max)` - Assert maximum length
+- `getPattern()` - Get validation pattern
+- `setPattern(String pattern)` - Set validation pattern
+- `assertPattern(String pattern)` - Assert validation pattern
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert field is valid
+- `assertInvalid()` - Assert field is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `HasClearButtonElement`:
+- `clickClearButton()` - Click the clear button
+- `isClearButtonVisible()` - Check if clear button is visible
+- `assertClearButtonVisible()` - Assert clear button is visible
+- `assertClearButtonNotVisible()` - Assert clear button is not visible
+
+From `HasPlaceholderElement`:
+- `getPlaceholder()` - Get placeholder text
+- `setPlaceholder(String placeholder)` - Set placeholder text
+- `assertPlaceholder(String placeholder)` - Assert placeholder matches
+
+From `FocusableElement`:
+- `focus()` - Focus the field
+- `blur()` - Blur the field
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert field has focus
+- `assertIsNotFocused()` - Assert field does not have focus
+
+From `HasLabelElement`:
+- `getLabel()` - Get label text
+- `assertLabel(String label)` - Assert label text
+- `getLabelLocator()` - Get label locator
+
+From `HasHelperElement`:
+- `getHelperText()` - Get helper text
+- `assertHelperHasText(String text)` - Assert helper text
+- `getHelperLocator()` - Get helper locator
+
+## Complete Example
+
+```java
+@Test
+public void testTextAreaValidation() {
+    // Find text area by label
+    TextAreaElement textArea = TextAreaElement.getByLabel(page, "Validated TextArea");
+    textArea.assertVisible();
+    
+    // Check validation constraints
+    textArea.assertMinLength(6);
+    textArea.assertMaxLength(7);
+    textArea.assertPattern("\\d{7}");
+    textArea.assertAllowedCharPattern("[0-8]");
+    
+    // Test invalid value
+    textArea.setValue("1");
+    textArea.assertInvalid();
+    textArea.assertErrorMessage("Minimum length is 6 characters");
+    
+    // Test valid value
+    textArea.setValue("1238456");
+    textArea.assertValid();
+    textArea.assertValue("1238456");
+}
+
+@Test
+public void testTextAreaInteractions() {
+    TextAreaElement textArea = TextAreaElement.getByLabel(page, "TextArea with placeholder and clear button");
+    
+    // Check placeholder
+    textArea.assertPlaceholder("Enter text here");
+    
+    // Test clear button
+    textArea.assertClearButtonNotVisible();
+    textArea.setValue("some value");
+    textArea.assertClearButtonVisible();
+    textArea.clear();
+    textArea.assertValue("");
+    
+    // Test helper text
+    textArea.assertHelperHasText("Helper text");
+    assertEquals("Helper text", textArea.getHelperText());
+}
+```

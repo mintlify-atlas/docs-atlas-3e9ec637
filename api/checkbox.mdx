@@ -1,0 +1,289 @@
+---
+title: CheckboxElement
+description: Playwright element wrapper for Vaadin checkboxes
+---
+
+## Overview
+
+The `CheckboxElement` class is a Playwright wrapper for the `<vaadin-checkbox>` component. It provides methods to interact with checkboxes, including checking/unchecking and managing indeterminate state.
+
+## Component Tag
+
+`<vaadin-checkbox>`
+
+## Extends
+
+- `VaadinElement`
+
+## Implements
+
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasHelperElement` - Helper text
+- `HasValueElement` - Value handling
+- `HasStyleElement` - CSS styling
+- `HasLabelElement` - Label text
+- `HasValidationPropertiesElement` - Validation state and error messages
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-checkbox>` element
+</ParamField>
+
+```java
+public CheckboxElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel
+
+Get a checkbox by its accessible label. Uses ARIA role `checkbox`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the checkbox
+</ParamField>
+
+```java
+public static CheckboxElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Accept Terms");
+checkbox.check();
+checkbox.assertChecked();
+```
+
+## Methods
+
+### isChecked
+
+Check if the checkbox is currently checked.
+
+```java
+public boolean isChecked()
+```
+
+**Returns:** `true` if checked, `false` otherwise
+
+### assertChecked
+
+Assert that the checkbox is checked.
+
+```java
+public void assertChecked()
+```
+
+### assertNotChecked
+
+Assert that the checkbox is not checked.
+
+```java
+public void assertNotChecked()
+```
+
+#### Example
+
+```java
+CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Default Checkbox");
+checkbox.assertNotChecked();
+checkbox.check();
+checkbox.assertChecked();
+```
+
+### check
+
+Check the checkbox.
+
+```java
+public void check()
+```
+
+### uncheck
+
+Uncheck the checkbox.
+
+```java
+public void uncheck()
+```
+
+#### Example
+
+```java
+CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Default Checkbox");
+checkbox.check();
+checkbox.assertChecked();
+checkbox.uncheck();
+checkbox.assertNotChecked();
+```
+
+### isIndeterminate
+
+Check if the checkbox is in indeterminate state.
+
+```java
+public boolean isIndeterminate()
+```
+
+**Returns:** `true` when indeterminate, `false` otherwise
+
+### assertIndeterminate
+
+Assert that the checkbox is indeterminate.
+
+```java
+public void assertIndeterminate()
+```
+
+### assertNotIndeterminate
+
+Assert that the checkbox is not indeterminate.
+
+```java
+public void assertNotIndeterminate()
+```
+
+### setIndeterminate
+
+Set the indeterminate state.
+
+<ParamField path="indeterminate" type="boolean" required>
+  `true` to set indeterminate, `false` to clear
+</ParamField>
+
+```java
+public void setIndeterminate(boolean indeterminate)
+```
+
+#### Example
+
+```java
+CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Indeterminate Checkbox");
+checkbox.assertIndeterminate();
+checkbox.check();
+checkbox.assertNotIndeterminate();
+checkbox.assertChecked();
+```
+
+### getEnabledLocator
+
+Get the locator for enabled/disabled state. Returns the input locator.
+
+```java
+public Locator getEnabledLocator()
+```
+
+### getAriaLabelLocator
+
+Get the locator for ARIA label operations. Returns the input locator.
+
+```java
+public Locator getAriaLabelLocator()
+```
+
+### getFocusLocator
+
+Get the locator for focus operations. Returns the input locator.
+
+```java
+public Locator getFocusLocator()
+```
+
+## Inherited Methods
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+- `getInputLocator()` - Get input element locator
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert checkbox is valid
+- `assertInvalid()` - Assert checkbox is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `HasLabelElement`:
+- `getLabel()` - Get label text
+- `assertLabel(String label)` - Assert label text
+- `getLabelLocator()` - Get label locator
+
+From `HasHelperElement`:
+- `getHelperText()` - Get helper text
+- `assertHelperHasText(String text)` - Assert helper text
+- `getHelperLocator()` - Get helper locator
+
+From `FocusableElement`:
+- `focus()` - Focus the checkbox
+- `blur()` - Blur the checkbox
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert checkbox has focus
+- `assertIsNotFocused()` - Assert checkbox does not have focus
+
+From `HasEnabledElement`:
+- `assertEnabled()` - Assert checkbox is enabled
+- `assertDisabled()` - Assert checkbox is disabled
+
+From `HasAriaLabelElement`:
+- `assertAriaLabel(String label)` - Assert ARIA label
+
+## Complete Example
+
+```java
+@Test
+public void testBasicCheckbox() {
+    // Find checkbox by label
+    CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Default Checkbox");
+    checkbox.assertVisible();
+    checkbox.assertNotChecked();
+    checkbox.assertEnabled();
+    
+    // Check and uncheck
+    checkbox.check();
+    checkbox.assertChecked();
+    checkbox.uncheck();
+    checkbox.assertNotChecked();
+}
+
+@Test
+public void testIndeterminateCheckbox() {
+    CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Indeterminate Checkbox");
+    checkbox.assertVisible();
+    checkbox.assertIndeterminate();
+    
+    // Clicking changes state
+    checkbox.check();
+    checkbox.assertNotIndeterminate();
+    checkbox.assertChecked();
+}
+
+@Test
+public void testCheckboxValidation() {
+    CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Required Checkbox");
+    checkbox.assertValid();
+    
+    // Check and uncheck required checkbox
+    checkbox.check();
+    checkbox.assertValid();
+    
+    checkbox.uncheck();
+    checkbox.assertInvalid();
+    checkbox.assertErrorMessage("Required Message");
+}
+
+@Test
+public void testDisabledCheckbox() {
+    CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Disabled Checkbox");
+    checkbox.assertVisible();
+    checkbox.assertDisabled();
+}
+```

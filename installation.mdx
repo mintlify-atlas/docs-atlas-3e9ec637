@@ -1,0 +1,182 @@
+---
+title: Installation
+description: Add Drama Finder to your Vaadin project for Playwright-based testing
+---
+
+Drama Finder is a set of Playwright helper classes designed for testing Vaadin applications. It provides typed element wrappers and convenient assertions for Vaadin components.
+
+## Requirements
+
+<Note>
+Drama Finder requires:
+- Java 21 or later
+- Maven or Gradle build system
+- A Vaadin application (tested with Vaadin 25+)
+- Playwright for Java
+</Note>
+
+## Maven Installation
+
+<Steps>
+  <Step title="Add the dependency">
+    Add Drama Finder as a test dependency in your `pom.xml`:
+
+    ```xml
+    <dependency>
+        <groupId>org.vaadin.addons</groupId>
+        <artifactId>dramafinder</artifactId>
+        <version>1.1.1-SNAPSHOT</version>
+        <scope>test</scope>
+    </dependency>
+    ```
+
+    <Tip>
+    Use the `test` scope since Drama Finder is only needed for testing.
+    </Tip>
+  </Step>
+
+  <Step title="Add Playwright dependency">
+    Drama Finder works with Playwright for Java. Add it if not already present:
+
+    ```xml
+    <dependency>
+        <groupId>com.microsoft.playwright</groupId>
+        <artifactId>playwright</artifactId>
+        <version>1.55.0</version>
+        <scope>test</scope>
+    </dependency>
+    ```
+  </Step>
+
+  <Step title="Configure test execution">
+    Configure the Maven Failsafe plugin for integration tests:
+
+    ```xml
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.5.4</version>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                </goals>
+            </execution>
+        </executions>
+        <configuration>
+            <includes>
+                <include>**/*IT.java</include>
+            </includes>
+        </configuration>
+    </plugin>
+    ```
+
+    <Note>
+    Integration tests should use the `*IT.java` naming convention to be picked up by Failsafe.
+    </Note>
+  </Step>
+
+  <Step title="Install Playwright browsers">
+    On first run, install Playwright browser binaries:
+
+    ```bash
+    mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install"
+    ```
+  </Step>
+</Steps>
+
+## Gradle Installation
+
+<Accordion title="Using Gradle instead of Maven">
+  Add Drama Finder to your `build.gradle`:
+
+  ```gradle
+  dependencies {
+      testImplementation 'org.vaadin.addons:dramafinder:1.1.1-SNAPSHOT'
+      testImplementation 'com.microsoft.playwright:playwright:1.55.0'
+  }
+  ```
+
+  Install Playwright browsers:
+
+  ```bash
+  ./gradlew playwright install
+  ```
+</Accordion>
+
+## Spring Boot Integration
+
+If you're using Spring Boot for your Vaadin application, add these test dependencies:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+
+<dependency>
+    <groupId>com.vaadin</groupId>
+    <artifactId>vaadin-spring-boot-starter</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+## Debugging Configuration
+
+<Tip>
+To see the browser UI during test execution (useful for debugging), add a Maven profile:
+</Tip>
+
+```xml
+<profiles>
+    <profile>
+        <id>debug-ui</id>
+        <properties>
+            <headless>false</headless>
+        </properties>
+    </profile>
+</profiles>
+```
+
+Then run tests with:
+
+```bash
+mvn -Pdebug-ui -Dit.test=YourTestIT verify
+```
+
+Or set the system property directly:
+
+```bash
+mvn -Dheadless=false -Dit.test=YourTestIT verify
+```
+
+## Verify Installation
+
+Run the Maven build to verify everything is set up correctly:
+
+```bash
+mvn clean install
+```
+
+For integration tests:
+
+```bash
+mvn verify
+```
+
+<Warning>
+The first run may take longer as Maven downloads dependencies and Playwright downloads browser binaries.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Write your first test with Drama Finder
+  </Card>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/parttio/dramafinder">
+    View source code and examples
+  </Card>
+</CardGroup>

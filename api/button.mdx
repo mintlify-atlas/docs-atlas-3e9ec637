@@ -1,0 +1,139 @@
+---
+title: ButtonElement
+description: Playwright element wrapper for Vaadin Button component
+---
+
+# ButtonElement
+
+Playwright element wrapper for `<vaadin-button>` providing lookup helpers and interaction methods.
+
+## Component Tag
+
+`vaadin-button`
+
+## Implements
+
+- `FocusableElement` - Focus management
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enable/disable state
+- `HasPrefixElement` - Prefix slot content
+- `HasStyleElement` - CSS class and style management
+- `HasSuffixElement` - Suffix slot content
+- `HasThemeElement` - Theme variant support
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-button>` element
+</ParamField>
+
+## Static Factory Methods
+
+### getByText
+
+Get a button by its accessible name or visible text.
+
+```java
+ButtonElement.getByText(Page page, String text)
+ButtonElement.getByText(Page page, Page.GetByRoleOptions options)
+ButtonElement.getByText(Locator locator, String text)
+ButtonElement.getByText(Locator locator, Locator.GetByRoleOptions options)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="locator" type="Locator">
+  Scope to search within
+</ParamField>
+
+<ParamField path="text" type="String">
+  Button's accessible name or text content
+</ParamField>
+
+<ParamField path="options" type="GetByRoleOptions">
+  Options for getByRole (ARIA BUTTON role)
+</ParamField>
+
+### getByLabel
+
+Alias for `getByText(Page, String)`.
+
+```java
+ButtonElement.getByLabel(Page page, String text)
+```
+
+## Methods
+
+All methods from implemented mixin interfaces are available. See:
+
+- `click()` - Click the button
+- `focus()` - Focus the button
+- `assertEnabled()` - Assert button is enabled
+- `assertDisabled()` - Assert button is disabled
+- `assertAriaLabel(String)` - Assert ARIA label
+- `getPrefixLocator()` - Get prefix slot locator
+- `getSuffixLocator()` - Get suffix slot locator
+- `assertTheme(String)` - Assert theme variant
+- `assertTooltipHasText(String)` - Assert tooltip text
+
+## Usage Examples
+
+### Basic Button Interaction
+
+```java
+// Find and click a button
+ButtonElement button = ButtonElement.getByText(page, "Click me");
+button.assertEnabled();
+button.click();
+```
+
+### Check Theme and Style
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Enabled Button");
+button.assertTheme("success");
+button.assertCssClass("custom-button");
+```
+
+### Working with Disabled State
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Toggle Button");
+button.assertEnabled();
+button.click();
+button.assertDisabled();
+```
+
+### Prefix and Suffix Content
+
+```java
+ButtonElement iconButton = ButtonElement.getByText(page, "Icon Button");
+assertThat(iconButton.getPrefixLocator()).hasText("Prefix");
+assertThat(iconButton.getSuffixLocator()).hasText("Suffix");
+iconButton.assertPrefixHasText("Prefix");
+iconButton.assertSuffixHasText("Suffix");
+```
+
+### Focus Management
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Enabled Button");
+button.assertIsFocused();
+
+ButtonElement nextButton = ButtonElement.getByText(page, "Toggle Button");
+nextButton.assertIsNotFocused();
+nextButton.focus();
+nextButton.assertIsFocused();
+```
+
+### Scoped Lookup
+
+```java
+// Find button within a specific container
+CardElement card = CardElement.getByTitle(page, "Booking Card");
+ButtonElement bookButton = ButtonElement.getByText(card.getLocator(), "Book now");
+bookButton.click();
+```

@@ -1,0 +1,162 @@
+---
+title: SplitLayoutElement
+description: Playwright element wrapper for Vaadin Split Layout component
+---
+
+# SplitLayoutElement
+
+Playwright element wrapper for `<vaadin-split-layout>` providing helpers to read/change orientation, access primary/secondary content, and control splitter position.
+
+## Component Tag
+
+`vaadin-split-layout`
+
+## Implements
+
+- `HasStyleElement` - CSS class and style management
+- `HasThemeElement` - Theme variant support
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-split-layout>` element
+</ParamField>
+
+## Static Factory Methods
+
+### get
+
+Get the first split layout on the page.
+
+```java
+SplitLayoutElement.get(Page page)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+## Content Locators
+
+### getPrimaryLocator
+
+Locator for the primary content (`slot="primary"`).
+
+```java
+Locator getPrimaryLocator()
+```
+
+### getSecondaryLocator
+
+Locator for the secondary content (`slot="secondary"`).
+
+```java
+Locator getSecondaryLocator()
+```
+
+### getHandleLocator
+
+Locator for the splitter handle (shadow `part="handle"`).
+
+```java
+Locator getHandleLocator()
+```
+
+## Methods
+
+### dragSplitterBy
+
+Drag the splitter by a delta offset in pixels. Positive X moves right, positive Y moves down.
+
+```java
+void dragSplitterBy(double deltaX, double deltaY)
+```
+
+<ParamField path="deltaX" type="double">
+  Horizontal offset in pixels (positive = right)
+</ParamField>
+
+<ParamField path="deltaY" type="double">
+  Vertical offset in pixels (positive = down)
+</ParamField>
+
+## Assertion Methods
+
+### assertVertical
+
+Assert that the layout orientation is vertical.
+
+```java
+void assertVertical()
+```
+
+### assertHorizontal
+
+Assert that the layout orientation is horizontal.
+
+```java
+void assertHorizontal()
+```
+
+## Usage Examples
+
+### Access Primary and Secondary Content
+
+```java
+SplitLayoutElement splitLayout = SplitLayoutElement.get(page);
+
+Locator primary = splitLayout.getPrimaryLocator();
+Locator secondary = splitLayout.getSecondaryLocator();
+
+assertThat(primary).containsText("Left panel content");
+assertThat(secondary).containsText("Right panel content");
+```
+
+### Verify Orientation
+
+```java
+SplitLayoutElement splitLayout = SplitLayoutElement.get(page);
+splitLayout.assertHorizontal();
+
+// After changing to vertical
+splitLayout.assertVertical();
+```
+
+### Drag the Splitter
+
+```java
+SplitLayoutElement splitLayout = SplitLayoutElement.get(page);
+
+// Drag splitter 100px to the right
+splitLayout.dragSplitterBy(100, 0);
+
+// For vertical layout, drag down
+splitLayout.dragSplitterBy(0, 50);
+```
+
+### Access Splitter Handle
+
+```java
+SplitLayoutElement splitLayout = SplitLayoutElement.get(page);
+Locator handle = splitLayout.getHandleLocator();
+
+assertThat(handle).isVisible();
+handle.hover(); // Show hover state
+```
+
+### Work with Nested Components
+
+```java
+SplitLayoutElement splitLayout = SplitLayoutElement.get(page);
+
+// Find button in primary panel
+ButtonElement button = ButtonElement.getByText(
+    splitLayout.getPrimaryLocator(), 
+    "Primary Action"
+);
+button.click();
+
+// Access grid in secondary panel
+GridElement grid = GridElement.get(splitLayout.getSecondaryLocator());
+assertEquals(10, grid.getTotalRowCount());
+```

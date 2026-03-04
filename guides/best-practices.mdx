@@ -1,0 +1,562 @@
+---
+title: Best Practices for Maintainable Tests
+description: Follow these best practices to write reliable, maintainable, and fast tests with Drama Finder
+---
+
+## Core Principles
+
+Writing good tests with Drama Finder requires following Playwright best practices while leveraging the Vaadin-specific element wrappers. This guide distills lessons from the Drama Finder codebase and community experience.
+
+## Element Selection
+
+### Prefer ARIA Roles Over Tag Names
+
+Always use accessible names (labels) to locate elements rather than CSS selectors or tag names.
+
+<CodeGroup>
+```java Good
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+ComboBoxElement country = ComboBoxElement.getByLabel(page, "Country");
+```
+
+```java Bad
+ButtonElement saveButton = new ButtonElement(page.locator("#save-btn"));
+TextFieldElement username = new TextFieldElement(page.locator(".username-field"));
+ComboBoxElement country = new ComboBoxElement(page.locator("vaadin-combo-box").first());
+```
+</CodeGroup>
+
+<Tip>
+  Using accessible names makes tests resilient to implementation changes and ensures your app is accessible.
+</Tip>
+
+### Always Use `.first()` for Single Elements
+
+When using generic locators that might match multiple elements, always call `.first()` to avoid ambiguity:
+
+```java
+// Good: Explicit single element selection
+public static ButtonElement getByText(Page page, String text) {
+    return new ButtonElement(
+        page.locator(BUTTON_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.BUTTON,
+                    new Page.GetByRoleOptions().setName(text))))
+            .first());
+}
+
+// Bad: Ambiguous locator that might match multiple elements
+public static ButtonElement getByText(Page page, String text) {
+    return new ButtonElement(page.locator(BUTTON_TAG_NAME));
+}
+```
+
+### Use Scoped Lookups for Nested Elements
+
+When working with elements inside containers, use scoped lookups:
+
+```java
+// Get a dialog
+DialogElement dialog = DialogElement.get(page);
+
+// Find button within the dialog
+ButtonElement confirmButton = ButtonElement.getByText(dialog.getLocator(), "Confirm");
+
+// Not recommended: Could match buttons outside the dialog
+ButtonElement confirmButton = ButtonElement.getByText(page, "Confirm");
+```
+
+## Assertions
+
+### Use Playwright Assertions with Auto-Retry
+
+Playwright assertions automatically retry until they pass or timeout, making tests resilient to timing issues.
+
+<CodeGroup>
+```java Good - Auto-retries
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+@Test
+public void testButtonEnabled() {
+    ButtonElement button = ButtonElement.getByText(page, "Submit");
+    button.click();
+    // Auto-retries until button is disabled or times out
+    assertThat(button.getLocator()).not().hasAttribute("disabled", "");
+}
+```
+
+```java Bad - No retry, flaky
+@Test
+public void testButtonEnabled() {
+    ButtonElement button = ButtonElement.getByText(page, "Submit");
+    button.click();
+    // Checks immediately, may fail due to timing
+    assertTrue(button.getLocator().getAttribute("disabled") == null);
+}
+```
+</CodeGroup>
+
+### Use Element-Specific Assertion Methods
+
+Drama Finder provides assertion methods that handle common patterns correctly:
+
+```java
+// Good: Proper null handling and retry logic
+textField.assertMinLength(6);
+textField.assertHelperHasText("Enter at least 6 characters");
+button.assertEnabled();
+comboBox.assertValue("Expected Value");
+
+// Less ideal: Raw Playwright assertions (more verbose)
+assertThat(textField.getInputLocator()).hasAttribute("minLength", "6");
+assertThat(textField.getHelperLocator()).hasText("Enter at least 6 characters");
+assertThat(button.getLocator()).not().hasAttribute("disabled", "");
+```
+
+### Assertion Symmetry Pattern
+
+For every state, provide both positive and negative assertions:
+
+```java
+// Checkbox states
+checkbox.assertChecked();
+checkbox.assertNotChecked();
+
+// Panel states
+accordionPanel.assertOpened();
+accordionPanel.assertClosed();
+
+// Validation states
+textField.assertValid();
+textField.assertInvalid();
+
+// Focus states
+element.assertIsFocused();
+element.assertIsNotFocused();
+```
+
+## Locator Usage
+
+### Understand Component vs. Input Locators
+
+Vaadin components often have a wrapper element and an internal input element. Know which to use:
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Email");
+
+// Component-level attributes (on vaadin-text-field)
+textField.getLocator().getAttribute("theme");
+textField.getLocator().getAttribute("focused");
+
+// Input-level attributes (on the internal <input>)
+textField.getInputLocator().getAttribute("value");
+textField.getInputLocator().getAttribute("maxlength");
+
+// Focus and enable operations target the input
+textField.getFocusLocator();   // Returns input locator
+textField.getEnabledLocator(); // Returns input locator
+```
+
+### Shadow DOM Considerations
+
+Playwright CSS selectors pierce shadow DOM by default, but XPath does not:
+
+```java
+// Good: CSS pierces shadow DOM automatically
+getLocator().locator("[slot='input']");
+getLocator().locator("[part~='clear-button']");
+
+// Use xpath only for direct children (doesn't pierce)
+getLocator().locator("xpath=./*[not(@slot)][1]");
+```
+
+<Warning>
+  Avoid complex XPath selectors. Prefer CSS with `part` and `slot` attributes for Vaadin components.
+</Warning>
+
+### Use Part Selectors for Internal Components
+
+Vaadin components expose internal parts via the `part` attribute:
+
+```java
+// Clear button
+public default void clickClearButton() {
+    getLocator().locator("[part~='clear-button']").click();
+}
+
+// Input field
+public Locator getInputLocator() {
+    return getLocator().locator("[part~='input-field'] input");
+}
+
+// Error message
+public Locator getErrorMessageLocator() {
+    return getLocator().locator("[slot='error-message']");
+}
+```
+
+## Waiting and Timing
+
+### Avoid Hard Waits
+
+Never use `Thread.sleep()` or `page.waitForTimeout()` in test logic:
+
+<CodeGroup>
+```java Good - Use assertions that wait
+button.click();
+assertThat(page.getByText("Success!")).isVisible();
+```
+
+```java Bad - Hard wait
+button.click();
+page.waitForTimeout(2000);
+assertTrue(page.getByText("Success!").isVisible());
+```
+</CodeGroup>
+
+<Note>
+  The small 10ms waits in `AbstractBasePlaywrightIT` helper methods are for event propagation, not for waiting on async operations.
+</Note>
+
+### Let Playwright Wait for Elements
+
+Playwright automatically waits for elements to be actionable:
+
+```java
+// Playwright waits for:
+// 1. Element to be attached to DOM
+// 2. Element to be visible
+// 3. Element to be stable (not animating)
+// 4. Element to be enabled
+button.click();
+textField.setValue("value");
+checkbox.check();
+```
+
+### Use Custom Wait Conditions Sparingly
+
+Only use custom waits when built-in waits aren't sufficient:
+
+```java
+// Good: Wait for specific business logic condition
+page.waitForFunction(
+    "() => window.myApp && window.myApp.isDataLoaded()"
+);
+
+// Good: Wait for Vaadin Flow to be ready (already in AbstractBasePlaywrightIT)
+page.waitForFunction(WAIT_FOR_VAADIN_SCRIPT);
+```
+
+## Test Organization
+
+### One Assertion Focus Per Test
+
+While tests can have multiple assertions, each test should verify one specific behavior:
+
+```java
+@Test
+public void testLoginWithValidCredentials() {
+    // Arrange
+    TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+    TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+    ButtonElement loginButton = ButtonElement.getByText(page, "Login");
+    
+    // Act
+    username.setValue("testuser");
+    password.setValue("password123");
+    loginButton.click();
+    
+    // Assert - multiple related assertions about successful login
+    assertThat(page).hasURL("/dashboard");
+    assertThat(page.getByText("Welcome, testuser!")).isVisible();
+    ButtonElement logoutButton = ButtonElement.getByText(page, "Logout");
+    logoutButton.assertVisible();
+}
+
+@Test
+public void testLoginWithInvalidCredentials() {
+    // Separate test for different scenario
+    username.setValue("invalid");
+    password.setValue("wrong");
+    loginButton.click();
+    
+    assertThat(page.getByText("Invalid credentials")).isVisible();
+    assertThat(page).hasURL("/login");
+}
+```
+
+### Use Descriptive Test Names
+
+Test names should describe the behavior being tested:
+
+```java
+// Good: Describes what and why
+@Test public void testValidationErrorAppearsWhenRequiredFieldIsEmpty()
+@Test public void testComboBoxFiltersItemsWhenUserTypesSearchTerm()
+@Test public void testDatePickerRejectsDateOutsideAllowedRange()
+
+// Bad: Generic or implementation-focused
+@Test public void testTextField()
+@Test public void test1()
+@Test public void testSetValue()
+```
+
+### Group Related Tests
+
+Use nested test classes to organize related tests:
+
+```java
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+public class UserFormViewIT extends SpringPlaywrightIT {
+
+    @Override
+    public String getView() {
+        return "user-form";
+    }
+
+    @Nested
+    class ValidationTests {
+        @Test
+        public void testEmailFieldRequiresValidFormat() { /*...*/ }
+        
+        @Test
+        public void testPhoneNumberRequiresDigitsOnly() { /*...*/ }
+    }
+
+    @Nested
+    class SaveOperationTests {
+        @Test
+        public void testSaveSucceedsWithValidData() { /*...*/ }
+        
+        @Test
+        public void testSaveFailsWithDuplicateEmail() { /*...*/ }
+    }
+}
+```
+
+## Performance and Efficiency
+
+### Reuse Page Instances
+
+The `AbstractBasePlaywrightIT` creates a new page for each test but reuses the browser. Don't create additional page instances unless needed:
+
+```java
+// Good: Use the provided page instance
+@Test
+public void testNavigation() {
+    ButtonElement button = ButtonElement.getByText(page, "Next");
+    button.click();
+}
+
+// Bad: Unnecessary page creation
+@Test
+public void testNavigation() {
+    Page newPage = browser.get().newPage();
+    ButtonElement button = ButtonElement.getByText(newPage, "Next");
+    button.click();
+}
+```
+
+### Minimize Navigation
+
+Avoid navigating multiple times in a single test:
+
+```java
+// Good: Single navigation per test
+@Test
+public void testDashboardContent() {
+    // Already navigated to dashboard in setupTest()
+    assertThat(page.getByText("Dashboard")).isVisible();
+}
+
+// Bad: Multiple navigations
+@Test
+public void testMultiplePages() {
+    page.navigate("/page1");
+    // ... assertions
+    page.navigate("/page2");
+    // ... assertions
+}
+```
+
+If you need to test multiple pages, create separate test methods or classes.
+
+### Use Constants for Element Identifiers
+
+Define constants for frequently used labels and text:
+
+```java
+public class UserFormViewIT extends SpringPlaywrightIT {
+    
+    private static final String USERNAME_LABEL = "Username";
+    private static final String EMAIL_LABEL = "Email";
+    private static final String SAVE_BUTTON_TEXT = "Save";
+    
+    @Test
+    public void testUserForm() {
+        TextFieldElement username = TextFieldElement.getByLabel(page, USERNAME_LABEL);
+        TextFieldElement email = TextFieldElement.getByLabel(page, EMAIL_LABEL);
+        ButtonElement save = ButtonElement.getByText(page, SAVE_BUTTON_TEXT);
+        // ...
+    }
+}
+```
+
+## Null Handling
+
+### Check for Null in Assertions
+
+When asserting absence of attributes or text, properly handle null:
+
+```java
+public void assertMinLength(Integer min) {
+    if (min != null) {
+        assertThat(getInputLocator()).hasAttribute("minLength", min + "");
+    } else {
+        // Assert attribute is absent
+        assertThat(getInputLocator())
+            .not().hasAttribute("minLength", Pattern.compile(".*"));
+    }
+}
+
+public void assertHelperHasText(String text) {
+    if (text != null) {
+        assertThat(getHelperLocator()).hasText(text);
+    } else {
+        // Check helper slot is empty or not present
+        assertThat(getHelperLocator()).not().isVisible();
+    }
+}
+```
+
+## Event Handling
+
+### Dispatch Events When Needed
+
+Some programmatic changes require dispatching events:
+
+```java
+// Setting value programmatically may require change event
+public void setValue(String value) {
+    getInputLocator().fill(value);
+    // Trigger change event for Vaadin to detect
+    getLocator().dispatchEvent("change");
+}
+
+// Input event for live validation
+public void typeText(String text) {
+    getInputLocator().type(text);
+    getLocator().dispatchEvent("input");
+}
+```
+
+### Prefer Real User Actions
+
+When possible, use real user interactions over programmatic changes:
+
+```java
+// Good: Real user interaction
+textField.getInputLocator().fill("value");
+textField.getInputLocator().press("Enter");
+
+// Less ideal: Direct manipulation
+textField.getInputLocator().evaluate("el => el.value = 'value'");
+textField.getLocator().dispatchEvent("change");
+```
+
+## Documentation
+
+### Document Public APIs
+
+All public methods should have Javadoc:
+
+```java
+/**
+ * Selects an item from the combo box dropdown.
+ * Opens the dropdown if not already open, filters to the item,
+ * and clicks the matching option.
+ *
+ * @param itemText the visible text of the item to select
+ * @throws PlaywrightException if the item is not found
+ */
+public void selectItem(String itemText) {
+    open();
+    getOverlayLocator()
+        .locator("vaadin-combo-box-item")
+        .filter(new Locator.FilterOptions().setHasText(itemText))
+        .click();
+}
+```
+
+### Document Behavioral Quirks
+
+Note any non-obvious behavior:
+
+```java
+/**
+ * Returns the helper text content.
+ * Note: If a component is slotted as helper, this returns
+ * the text content of that component.
+ *
+ * @return the helper text, or null if no helper is set
+ */
+public String getHelperText() {
+    return getHelperLocator().textContent();
+}
+```
+
+## Summary Checklist
+
+<Accordion title="Element Selection Checklist">
+- Use accessible names (labels) for element lookup
+- Always call `.first()` on potentially ambiguous locators
+- Use scoped lookups for nested elements
+- Prefer ARIA roles over CSS selectors or tag names
+</Accordion>
+
+<Accordion title="Assertions Checklist">
+- Use Playwright assertions with auto-retry
+- Use element-specific assertion methods
+- Provide both positive and negative assertions
+- Handle null values properly
+</Accordion>
+
+<Accordion title="Locators Checklist">
+- Know when to use component vs. input locators
+- Use CSS selectors (pierce shadow DOM) not XPath
+- Use `part` selectors for internal elements
+- Understand shadow DOM piercing rules
+</Accordion>
+
+<Accordion title="Timing Checklist">
+- Never use hard waits (`Thread.sleep()`)
+- Let Playwright wait for elements automatically
+- Use Playwright assertions for waiting
+- Only use custom waits when necessary
+</Accordion>
+
+<Accordion title="Test Organization Checklist">
+- One behavior focus per test
+- Use descriptive test names
+- Group related tests with nested classes
+- Arrange-Act-Assert structure
+</Accordion>
+
+<Accordion title="Performance Checklist">
+- Reuse the provided page instance
+- Minimize navigation in tests
+- Use constants for element identifiers
+- Consider parallel test execution
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Common Patterns" icon="code" href="/guides/common-patterns">
+    Explore real-world testing scenarios
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/guides/troubleshooting">
+    Solutions to common testing issues
+  </Card>
+</CardGroup>

@@ -1,0 +1,244 @@
+---
+title: TimePickerElement
+description: Playwright element wrapper for Vaadin TimePicker component
+---
+
+# TimePickerElement
+
+Playwright element wrapper for `<vaadin-time-picker>`. Adds convenience methods for `LocalTime` values and lookup by label.
+
+## Component Tag
+
+`vaadin-time-picker`
+
+## Implements
+
+- `HasInputFieldElement`
+- `HasValidationPropertiesElement`
+- `HasClearButtonElement`
+- `HasPlaceholderElement`
+- `HasThemeElement`
+- `FocusableElement`
+- `HasAriaLabelElement`
+- `HasEnabledElement`
+- `HasTooltipElement`
+- `HasLabelElement`
+- `HasHelperElement`
+
+## Factory Methods
+
+### getByLabel (Page)
+
+```java
+public static TimePickerElement getByLabel(Page page, String label)
+```
+
+Get the `TimePickerElement` by its label. Uses ARIA role `COMBOBOX`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `TimePickerElement`
+
+### getByLabel (Locator)
+
+```java
+public static TimePickerElement getByLabel(Locator locator, String label)
+```
+
+Get the `TimePickerElement` by its label within a given scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `TimePickerElement`
+
+## Constructor
+
+### TimePickerElement
+
+```java
+public TimePickerElement(Locator locator)
+```
+
+Create a new `TimePickerElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-time-picker>` element
+</ParamField>
+
+## Methods
+
+### setValue (LocalTime)
+
+```java
+public void setValue(LocalTime time)
+```
+
+Set the value using a `LocalTime` formatted as HH:mm.
+
+<ParamField path="time" type="LocalTime" required>
+  The time to set
+</ParamField>
+
+### getValueAsLocalTime
+
+```java
+public LocalTime getValueAsLocalTime()
+```
+
+Get the current value as a `LocalTime`.
+
+**Returns:** The parsed time or `null` when empty
+
+### assertValue (LocalTime)
+
+```java
+public void assertValue(LocalTime value)
+```
+
+Assert that the value equals the provided time.
+
+<ParamField path="value" type="LocalTime">
+  Expected `LocalTime` or `null` for empty
+</ParamField>
+
+### getAriaLabelLocator
+
+```java
+@Override
+public Locator getAriaLabelLocator()
+```
+
+Get the locator for ARIA label.
+
+**Returns:** The input locator
+
+### getFocusLocator
+
+```java
+@Override
+public Locator getFocusLocator()
+```
+
+Get the locator to use for focus operations.
+
+**Returns:** The input locator
+
+### getEnabledLocator
+
+```java
+@Override
+public Locator getEnabledLocator()
+```
+
+Get the locator to use for enabled/disabled checks.
+
+**Returns:** The input locator
+
+## Usage Examples
+
+### Basic Time Selection
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Appointment time");
+timePicker.assertVisible();
+timePicker.assertHelperHasText("Enter the appointment time");
+
+LocalTime testTime = LocalTime.of(14, 30);
+timePicker.setValue(testTime);
+timePicker.assertValue("14:30");
+timePicker.assertValue(testTime);
+```
+
+### Min/Max/Step Validation
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Meeting time");
+LocalTime initialTime = LocalTime.of(10, 30);
+LocalTime minTime = LocalTime.of(9, 0);
+LocalTime maxTime = LocalTime.of(17, 0);
+
+// Check initial value
+timePicker.assertValue(initialTime);
+
+// Valid time within bounds
+LocalTime validTime = LocalTime.of(11, 0);
+timePicker.setValue(validTime);
+timePicker.assertValue(validTime);
+timePicker.assertValid();
+
+// Invalid time (after max)
+LocalTime invalidTime = maxTime.plusHours(1);
+timePicker.setValue(invalidTime);
+timePicker.assertInvalid();
+timePicker.assertErrorMessage("Maximum time exceeded");
+
+// Invalid time (before min)
+LocalTime anotherInvalidTime = minTime.minusHours(1);
+timePicker.setValue(anotherInvalidTime);
+timePicker.assertInvalid();
+timePicker.assertErrorMessage("Minimum time exceeded");
+
+// Set valid value again
+timePicker.setValue(initialTime);
+timePicker.assertValid();
+```
+
+### Theme
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Appointment time");
+timePicker.assertVisible();
+timePicker.assertTheme("small");
+```
+
+### Focus
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Appointment time");
+TimePickerElement secondPicker = TimePickerElement.getByLabel(page, "Meeting time");
+
+timePicker.assertIsFocused();
+secondPicker.assertIsNotFocused();
+secondPicker.focus();
+secondPicker.assertIsFocused();
+timePicker.assertIsNotFocused();
+```
+
+### ARIA Label
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Invisible label");
+timePicker.assertVisible();
+timePicker.assertAriaLabel("Invisible label");
+```
+
+### Enabled/Disabled
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Enabled/Disabled Field");
+timePicker.assertDisabled();
+
+page.locator("#enable-disable-button").click();
+
+timePicker.assertEnabled();
+```
+
+### Tooltip
+
+```java
+TimePickerElement timePicker = TimePickerElement.getByLabel(page, "Appointment time");
+timePicker.assertVisible();
+timePicker.assertTooltipHasText("Tooltip for component");
+```

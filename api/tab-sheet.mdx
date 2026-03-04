@@ -1,0 +1,147 @@
+---
+title: TabSheetElement
+description: Playwright element wrapper for Vaadin Tab Sheet component
+---
+
+# TabSheetElement
+
+Playwright element wrapper for `<vaadin-tabsheet>` providing helpers to access/select tabs and view current content panel.
+
+## Component Tag
+
+`vaadin-tabsheet`
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-tabsheet>` element
+</ParamField>
+
+## Static Factory Methods
+
+### get
+
+Get the first tabsheet instance on the page.
+
+```java
+TabSheetElement.get(Page page)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+## Methods
+
+### getTab
+
+Get a tab by its label text.
+
+```java
+TabElement getTab(String label)
+```
+
+<ParamField path="label" type="String">
+  Tab label text
+</ParamField>
+
+Returns a `TabElement` for the matching tab.
+
+### getSelectedTab
+
+Get the currently selected tab.
+
+```java
+TabElement getSelectedTab()
+```
+
+Returns the `TabElement` that is currently selected.
+
+### selectTab
+
+Select a tab by label text.
+
+```java
+void selectTab(String label)
+```
+
+<ParamField path="label" type="String">
+  Tab label text
+</ParamField>
+
+### getContentLocator
+
+Locator for the currently visible content panel.
+
+```java
+Locator getContentLocator()
+```
+
+Returns a locator for the tab panel that is currently visible (not hidden).
+
+## Assertion Methods
+
+### assertTabsCount
+
+Assert the number of tabs.
+
+```java
+void assertTabsCount(int count)
+```
+
+<ParamField path="count" type="int">
+  Expected tab count
+</ParamField>
+
+## Usage Examples
+
+### Basic Tab Operations
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+tabSheet.assertTabsCount(3);
+
+// Select a tab
+tabSheet.selectTab("Details");
+
+// Check selected tab
+TabElement selectedTab = tabSheet.getSelectedTab();
+assertEquals("Details", selectedTab.getLabel());
+```
+
+### Access Tab Content
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+tabSheet.selectTab("Settings");
+
+// Get visible content
+Locator content = tabSheet.getContentLocator();
+assertThat(content).containsText("Settings panel content");
+```
+
+### Work with Individual Tabs
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+
+TabElement tab = tabSheet.getTab("Details");
+tab.assertNotSelected();
+tab.select();
+tab.assertSelected();
+```
+
+### Verify Tab Selection
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+
+// Initially first tab selected
+TabElement firstTab = tabSheet.getTab("Overview");
+firstTab.assertSelected();
+
+// Switch to second tab
+tabSheet.selectTab("Details");
+firstTab.assertNotSelected();
+tabSheet.getTab("Details").assertSelected();
+```

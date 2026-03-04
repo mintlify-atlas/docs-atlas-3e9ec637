@@ -1,0 +1,214 @@
+---
+title: AccordionPanelElement
+description: Playwright element wrapper for Vaadin Accordion Panel component
+---
+
+# AccordionPanelElement
+
+Playwright element wrapper for `<vaadin-accordion-panel>` offering utilities to toggle open state, read summary, and access content.
+
+## Component Tag
+
+`vaadin-accordion-panel`
+
+## Related Tags
+
+- `vaadin-accordion-heading` - Panel heading/summary element
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-accordion-panel>` element
+</ParamField>
+
+## Static Factory Methods
+
+### getAccordionPanelBySummary
+
+Get an accordion panel by its summary text within a scope.
+
+```java
+AccordionPanelElement.getAccordionPanelBySummary(Locator locator, String summary)
+```
+
+<ParamField path="locator" type="Locator">
+  Scope to search within (typically the accordion element)
+</ParamField>
+
+<ParamField path="summary" type="String">
+  Panel summary heading text
+</ParamField>
+
+### getOpenedAccordionPanel
+
+Get the currently opened accordion panel within a scope.
+
+```java
+AccordionPanelElement.getOpenedAccordionPanel(Locator locator)
+```
+
+<ParamField path="locator" type="Locator">
+  Scope to search within (typically the accordion element)
+</ParamField>
+
+## Methods
+
+### isOpen
+
+Whether the panel is open.
+
+```java
+boolean isOpen()
+```
+
+### setOpen
+
+Set the open state by clicking the summary when needed.
+
+```java
+void setOpen(boolean open)
+```
+
+<ParamField path="open" type="boolean">
+  Desired open state
+</ParamField>
+
+### getSummaryLocator
+
+Locator pointing to the summary heading (`vaadin-accordion-heading`).
+
+```java
+Locator getSummaryLocator()
+```
+
+### getSummaryText
+
+Text content of the summary heading.
+
+```java
+String getSummaryText()
+```
+
+### getContentLocator
+
+Locator pointing to the first non-slotted content element.
+
+```java
+Locator getContentLocator()
+```
+
+## Assertion Methods
+
+### assertOpened
+
+Assert that the panel is opened.
+
+```java
+void assertOpened()
+```
+
+### assertClosed
+
+Assert that the panel is closed.
+
+```java
+void assertClosed()
+```
+
+### assertContentVisible
+
+Assert that the content area is visible.
+
+```java
+void assertContentVisible()
+```
+
+### assertContentNotVisible
+
+Assert that the content area is not visible.
+
+```java
+void assertContentNotVisible()
+```
+
+### assertEnabled
+
+Assert that the panel is enabled.
+
+```java
+void assertEnabled()
+```
+
+### assertDisabled
+
+Assert that the panel is disabled.
+
+```java
+void assertDisabled()
+```
+
+## Usage Examples
+
+### Basic Panel Operations
+
+```java
+// Get panel from accordion
+AccordionElement accordion = new AccordionElement(page.locator("vaadin-accordion").first());
+AccordionPanelElement panel = accordion.getPanel("Panel 1");
+
+panel.assertOpened();
+panel.assertContentVisible();
+```
+
+### Toggle Panel State
+
+```java
+AccordionPanelElement panel = accordion.getPanel("Panel 2");
+panel.assertClosed();
+panel.setOpen(true);
+panel.assertOpened();
+```
+
+### Check Summary Text
+
+```java
+AccordionPanelElement panel = accordion.getPanel("My Panel");
+String summary = panel.getSummaryText();
+assertEquals("My Panel", summary);
+```
+
+### Access Panel Content
+
+```java
+AccordionPanelElement panel = accordion.getPanel("Panel 1");
+if (panel.isOpen()) {
+    assertThat(panel.getContentLocator()).hasText("Content 1");
+}
+```
+
+### Work with Disabled Panel
+
+```java
+AccordionPanelElement panel = accordion.getPanel("Disabled Panel");
+panel.assertDisabled();
+panel.assertClosed();
+
+// Manual click has no effect when disabled
+panel.getSummaryLocator().click();
+panel.assertClosed();
+```
+
+### Use Static Factory Methods
+
+```java
+// Get panel directly by summary
+Locator accordionLocator = page.locator("vaadin-accordion").first();
+AccordionPanelElement panel = AccordionPanelElement.getAccordionPanelBySummary(
+    accordionLocator, 
+    "Settings"
+);
+
+// Get currently opened panel
+AccordionPanelElement opened = AccordionPanelElement.getOpenedAccordionPanel(accordionLocator);
+assertEquals("Panel 2", opened.getSummaryText());
+```

@@ -1,0 +1,408 @@
+---
+title: Spring Boot Test Setup
+description: Configure and set up your test environment for Drama Finder with Spring Boot
+---
+
+## Overview
+
+Drama Finder integrates seamlessly with Spring Boot to provide robust end-to-end testing for Vaadin applications. This guide walks you through setting up your test infrastructure using the `AbstractBasePlaywrightIT` base class.
+
+## Project Setup
+
+<Steps>
+  <Step title="Add Drama Finder dependency">
+    Add the Drama Finder library as a test dependency in your `pom.xml`:
+
+    ```xml
+    <dependency>
+        <groupId>org.vaadin.addons</groupId>
+        <artifactId>dramafinder</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <scope>test</scope>
+    </dependency>
+    ```
+  </Step>
+
+  <Step title="Configure Maven Failsafe Plugin">
+    Integration tests in Drama Finder use the `maven-failsafe-plugin` and follow the `*IT.java` naming convention:
+
+    ```xml
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+    ```
+
+    <Note>
+      Unit tests (using `*Test.java`) run with Surefire, while integration tests (using `*IT.java`) run with Failsafe during the `verify` phase.
+    </Note>
+  </Step>
+
+  <Step title="Create base test class">
+    Create a Spring-specific base class that extends `AbstractBasePlaywrightIT`:
+
+    ```java
+    package com.example.tests;
+
+    import org.springframework.boot.test.web.server.LocalServerPort;
+    import org.vaadin.addons.dramafinder.AbstractBasePlaywrightIT;
+
+    public abstract class SpringPlaywrightIT extends AbstractBasePlaywrightIT {
+
+        @LocalServerPort
+        private int port;
+
+        @Override
+        public String getUrl() {
+            return String.format("http://localhost:%d/", port);
+        }
+    }
+    ```
+
+    This class automatically injects the random port that Spring Boot assigns to your test server.
+  </Step>
+
+  <Step title="Create your first test">
+    Create a test class that extends your Spring base class:
+
+    ```java
+    package com.example.tests;
+
+    import org.junit.jupiter.api.Test;
+    import org.springframework.boot.test.context.SpringBootTest;
+    import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+    import org.vaadin.addons.dramafinder.element.ButtonElement;
+    import org.vaadin.addons.dramafinder.element.TextFieldElement;
+
+    import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+    @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+    public class LoginViewIT extends SpringPlaywrightIT {
+
+        @Override
+        public String getView() {
+            return "login";
+        }
+
+        @Test
+        public void testLoginForm() {
+            TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+            TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+            ButtonElement loginButton = ButtonElement.getByText(page, "Login");
+
+            username.assertVisible();
+            password.assertVisible();
+            loginButton.assertEnabled();
+
+            username.setValue("testuser");
+            password.setValue("password123");
+            loginButton.click();
+
+            assertThat(page.getByText("Welcome, testuser!")).isVisible();
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Understanding AbstractBasePlaywrightIT
+
+The `AbstractBasePlaywrightIT` class provides essential infrastructure for your tests:
+
+### Lifecycle Management
+
+```java
+@BeforeAll
+public static void setup() {
+    // Creates Playwright instance and launches browser (Chromium by default)
+    // Uses ThreadLocal for thread-safe parallel test execution
+}
+
+@BeforeEach
+public void setupTest() {
+    // Creates new page instance
+    // Navigates to getUrl() + getView()
+    // Waits for Vaadin Flow to be ready
+    // Sets default timeouts
+}
+
+@AfterEach
+public void cleanupTest() {
+    // Closes the page after each test
+}
+
+@AfterAll
+public static void cleanup() {
+    // Closes browser and Playwright instance
+}
+```
+
+### Vaadin Flow Readiness Check
+
+The base class includes a `WAIT_FOR_VAADIN_SCRIPT` that ensures Vaadin Flow is fully loaded before tests run:
+
+```java
+page.waitForFunction(WAIT_FOR_VAADIN_SCRIPT);
+```
+
+This prevents flaky tests by ensuring all Vaadin clients are inactive before proceeding.
+
+### Default Timeouts
+
+```java
+page.setDefaultNavigationTimeout(4000);  // 4 seconds for navigation
+page.setDefaultTimeout(15000);           // 15 seconds for element operations
+```
+
+<Tip>
+  Adjust these timeouts in your base class if your application needs more time to load or respond.
+</Tip>
+
+### Accessing Playwright Objects
+
+The base class provides protected accessors:
+
+```java
+protected Page page;              // Available as field
+protected Page getPage();         // Accessor method
+protected Browser getBrowser();   // For multi-page scenarios
+protected Playwright getPlaywright(); // For advanced configuration
+```
+
+## Running Tests
+
+### Run all integration tests
+
+```bash
+mvn verify
+```
+
+Or with the integration test profile:
+
+```bash
+mvn -Pit verify
+```
+
+### Run a single test class
+
+```bash
+mvn -Dit.test=LoginViewIT verify
+```
+
+### Run a specific test method
+
+```bash
+mvn -Dit.test=LoginViewIT#testLoginForm verify
+```
+
+### Debug with visible browser
+
+By default, tests run in headless mode. To see the browser:
+
+```bash
+mvn -Dit.test=LoginViewIT -Dheadless=false verify
+```
+
+Or create a debug profile in your `pom.xml`:
+
+```xml
+<profile>
+    <id>debug-ui</id>
+    <properties>
+        <headless>false</headless>
+    </properties>
+</profile>
+```
+
+Then run:
+
+```bash
+mvn -Pdebug-ui -Dit.test=LoginViewIT verify
+```
+
+## Headless Mode Configuration
+
+The `AbstractBasePlaywrightIT` class checks for headless mode in this order:
+
+1. System property: `-Dheadless=false`
+2. Environment variable: `HEADLESS=false`
+3. Default: `true` (headless)
+
+```java
+protected static boolean isHeadless() {
+    String propertyValue = System.getProperty("headless");
+    if (propertyValue == null || propertyValue.isBlank()) {
+        propertyValue = System.getenv("HEADLESS");
+    }
+    if (propertyValue == null || propertyValue.isBlank()) {
+        return true;
+    }
+    return Boolean.parseBoolean(propertyValue);
+}
+```
+
+## HasTestView Interface
+
+Implement the `HasTestView` interface to specify the view path for your test:
+
+```java
+public interface HasTestView {
+    String getUrl();      // Base URL (provided by SpringPlaywrightIT)
+    
+    default String getView() {
+        return "";        // Override to specify view path
+    }
+}
+```
+
+### Example
+
+```java
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+public class CheckoutViewIT extends SpringPlaywrightIT implements HasTestView {
+
+    @Override
+    public String getView() {
+        return "checkout";  // Navigates to http://localhost:{port}/checkout
+    }
+}
+```
+
+<Warning>
+  If you don't override `getView()`, tests will navigate to the root path (`/`).
+</Warning>
+
+## Thread Safety and Parallel Execution
+
+The base class uses `ThreadLocal` storage for Playwright, Browser, and Page instances, making it safe for parallel test execution:
+
+```java
+private static final ThreadLocal<Playwright> playwright = new ThreadLocal<>();
+private static final ThreadLocal<Browser> browser = new ThreadLocal<>();
+```
+
+To enable parallel execution in Maven:
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-failsafe-plugin</artifactId>
+    <configuration>
+        <parallel>classes</parallel>
+        <threadCount>4</threadCount>
+    </configuration>
+</plugin>
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+name: Integration Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Install Playwright browsers
+        run: mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
+      - name: Run integration tests
+        run: mvn verify
+        env:
+          HEADLESS: true
+```
+
+### GitLab CI
+
+```yaml
+integration-tests:
+  image: maven:3.9-eclipse-temurin-21
+  stage: test
+  script:
+    - mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
+    - mvn verify
+  variables:
+    HEADLESS: "true"
+```
+
+<Note>
+  Playwright browsers are downloaded automatically on first run, but explicitly installing them in CI ensures consistent behavior.
+</Note>
+
+## Troubleshooting Setup Issues
+
+### Browser not found
+
+If you see "Executable doesn't exist" errors, install Playwright browsers:
+
+```bash
+mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install"
+```
+
+### Tests timing out
+
+Increase timeouts in your base class:
+
+```java
+@BeforeEach
+public void setupTest() throws Exception {
+    page = browser.get().newPage();
+    page.navigate(getUrl() + getView());
+    page.waitForFunction(WAIT_FOR_VAADIN_SCRIPT);
+    page.setDefaultNavigationTimeout(10000);  // Increased to 10 seconds
+    page.setDefaultTimeout(30000);             // Increased to 30 seconds
+}
+```
+
+### Port conflicts
+
+Spring Boot automatically assigns a random port with `WebEnvironment.RANDOM_PORT`. If you need a specific port:
+
+```java
+@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT)
+@TestPropertySource(properties = "server.port=8888")
+public class MyViewIT extends SpringPlaywrightIT {
+    // ...
+}
+```
+
+### Vaadin not loading
+
+If the `WAIT_FOR_VAADIN_SCRIPT` times out, check:
+- Dev mode bundle is built (`mvn vaadin:build-frontend`)
+- No JavaScript errors in console (enable debug mode to see)
+- Network requests are completing successfully
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Best Practices" icon="lightbulb" href="/guides/best-practices">
+    Learn best practices for maintainable tests
+  </Card>
+  <Card title="Common Patterns" icon="code" href="/guides/common-patterns">
+    Explore real-world testing scenarios
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/guides/troubleshooting">
+    Solutions to common testing issues
+  </Card>
+  <Card title="Element Reference" icon="book" href="/api-reference">
+    Browse all available element wrappers
+  </Card>
+</CardGroup>

@@ -1,0 +1,219 @@
+---
+title: VaadinElement
+description: Base class for typed Playwright wrappers around Vaadin components
+---
+
+## Overview
+
+`VaadinElement` is the abstract base class for all Vaadin component wrappers in Drama Finder. It exposes common helpers for clicking, visibility assertions, text retrieval, and generic DOM property access. Concrete component classes extend this base and add component-specific APIs.
+
+## Constructor
+
+### VaadinElement(Locator locator)
+
+Creates a new VaadinElement wrapper.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator pointing to the component root element
+</ParamField>
+
+## Methods
+
+### click()
+
+Clicks the component root element.
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Click me");
+button.click();
+```
+
+<ResponseField name="return" type="void">
+  This method does not return a value
+</ResponseField>
+
+### getText()
+
+Gets the textual content of the component root element.
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Submit");
+String text = button.getText();
+assertEquals("Submit", text);
+```
+
+<ResponseField name="return" type="String">
+  The text content, or `null` if none
+</ResponseField>
+
+### getLocator()
+
+Gets the underlying Playwright locator for the component.
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Username");
+Locator locator = textField.getLocator();
+assertThat(locator).hasAttribute("label", "Username");
+```
+
+<ResponseField name="return" type="Locator">
+  The Playwright locator for this element
+</ResponseField>
+
+### setProperty(String name, Object value)
+
+Sets a DOM property on the underlying element (e.g., `value`, `disabled`).
+
+<ParamField path="name" type="String" required>
+  The property name to set
+</ParamField>
+
+<ParamField path="value" type="Object" required>
+  The property value to assign
+</ParamField>
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Email");
+textField.setProperty("value", "user@example.com");
+textField.setProperty("disabled", true);
+```
+
+<ResponseField name="return" type="void">
+  This method does not return a value
+</ResponseField>
+
+### getProperty(String name)
+
+Gets a DOM property from the underlying element.
+
+<ParamField path="name" type="String" required>
+  The property name to retrieve
+</ParamField>
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Email");
+Object value = textField.getProperty("value");
+assertEquals("user@example.com", value);
+```
+
+<ResponseField name="return" type="Object">
+  The property value, or `null` if the property is absent
+</ResponseField>
+
+### isVisible()
+
+Checks whether the component is visible.
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Submit");
+if (button.isVisible()) {
+    button.click();
+}
+```
+
+<ResponseField name="return" type="boolean">
+  `true` when the element is visible, `false` otherwise
+</ResponseField>
+
+### assertVisible()
+
+Asserts that the component is visible. This assertion auto-retries until the timeout is reached.
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Username");
+textField.assertVisible();
+```
+
+<ResponseField name="return" type="void">
+  Throws an assertion error if the element is not visible
+</ResponseField>
+
+### isHidden()
+
+Checks whether the component is hidden.
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Hidden Button");
+assertTrue(button.isHidden());
+```
+
+<ResponseField name="return" type="boolean">
+  `true` when the element is hidden, `false` otherwise
+</ResponseField>
+
+### assertHidden()
+
+Asserts that the component is hidden. This assertion auto-retries until the timeout is reached.
+
+```java
+ButtonElement button = ButtonElement.getByText(page, "Hidden Button");
+button.assertHidden();
+```
+
+<ResponseField name="return" type="void">
+  Throws an assertion error if the element is visible
+</ResponseField>
+
+## Usage Examples
+
+### Basic Interaction
+
+```java
+@Test
+public void testButtonClick() {
+    ButtonElement button = ButtonElement.getByText(page, "Click me");
+    button.assertVisible();
+    button.click();
+    assertThat(page.getByText("Button clicked!")).isVisible();
+}
+```
+
+### Property Manipulation
+
+```java
+@Test
+public void testPropertyAccess() {
+    TextFieldElement textField = TextFieldElement.getByLabel(page, "Email");
+    
+    // Set property
+    textField.setProperty("value", "test@example.com");
+    
+    // Get property
+    Object value = textField.getProperty("value");
+    assertEquals("test@example.com", value);
+}
+```
+
+### Visibility Checks
+
+```java
+@Test
+public void testVisibility() {
+    ButtonElement visibleButton = ButtonElement.getByText(page, "Visible");
+    ButtonElement hiddenButton = ButtonElement.getByText(page, "Hidden");
+    
+    visibleButton.assertVisible();
+    assertTrue(visibleButton.isVisible());
+    
+    hiddenButton.assertHidden();
+    assertTrue(hiddenButton.isHidden());
+}
+```
+
+### Text Content Retrieval
+
+```java
+@Test
+public void testTextContent() {
+    ButtonElement button = ButtonElement.getByText(page, "Submit Form");
+    String text = button.getText();
+    assertEquals("Submit Form", text);
+}
+```
+
+## Notes
+
+- All assertion methods use Playwright's auto-retry mechanism and will wait until the condition is met or the timeout is reached.
+- The `getProperty()` and `setProperty()` methods operate on DOM properties, not HTML attributes. Use `getLocator().getAttribute()` for HTML attributes.
+- Concrete component classes like `ButtonElement`, `TextFieldElement`, etc., extend this base class and inherit all these methods.
+- The `isVisible()` and `isHidden()` methods are inverses of each other: `isHidden()` returns `!isVisible()`.

@@ -1,0 +1,177 @@
+---
+title: HasEnabledElement
+description: Mixin interface for components that expose enabled/disabled state
+---
+
+## Overview
+
+`HasEnabledElement` provides methods for checking and asserting the enabled/disabled state of Vaadin components. This interface is essential for testing interactive components that can be enabled or disabled based on application logic.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasEnabledElement`
+
+## Methods
+
+### getEnabledLocator()
+
+```java
+default Locator getEnabledLocator()
+```
+
+Returns the locator used to check enablement state. By default, returns the root component locator, but implementations may override this to target a specific internal element (e.g., an input field within a component).
+
+**Returns:** `Locator` - The locator to check for enabled/disabled state
+
+---
+
+### isEnabled()
+
+```java
+default boolean isEnabled()
+```
+
+Checks whether the component is currently enabled.
+
+**Returns:** `boolean` - `true` if the component is enabled, `false` if disabled
+
+---
+
+### assertEnabled()
+
+```java
+default void assertEnabled()
+```
+
+Asserts that the component is enabled.
+
+**Throws:** `AssertionError` if the component is disabled
+
+---
+
+### assertDisabled()
+
+```java
+default void assertDisabled()
+```
+
+Asserts that the component is disabled.
+
+**Throws:** `AssertionError` if the component is enabled
+
+## Implementing Classes
+
+The following element classes implement `HasEnabledElement`:
+
+- `ButtonElement`
+- `CheckboxElement`
+- `RadioButtonElement`
+- `RadioButtonGroupElement`
+- `MessageInputElement`
+- `GridElement`
+- `UploadElement`
+- `SideNavigationItemElement`
+- All text field components (via `TextFieldElement` and its subclasses)
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import com.microsoft.playwright.Page;
+
+public class EnabledStateTest {
+    void testEnabledState(Page page) {
+        ButtonElement submitButton = ButtonElement.getByText(page, "Submit");
+        TextFieldElement nameField = TextFieldElement.getByLabel(page, "Name");
+        
+        // Check initial state
+        submitButton.assertDisabled();
+        nameField.assertEnabled();
+        
+        // Enable button after filling field
+        nameField.setValue("John Doe");
+        submitButton.assertEnabled();
+        
+        // Verify button can be clicked when enabled
+        if (submitButton.isEnabled()) {
+            submitButton.click();
+        }
+    }
+}
+```
+
+## Implementation Details
+
+### Locator Delegation Pattern
+
+Some components override `getEnabledLocator()` to target a specific internal element rather than the component root. For example, text field components delegate to their input element:
+
+```java
+@Override
+public Locator getEnabledLocator() {
+    return getInputLocator();  // Check disabled state on input, not wrapper
+}
+```
+
+This ensures that the disabled state is checked on the correct element within the component's shadow DOM.
+
+### Playwright's isEnabled()
+
+The `isEnabled()` method uses Playwright's built-in `Locator.isEnabled()`, which checks whether an element:
+- Does not have the `disabled` attribute
+- Is not a disabled fieldset ancestor
+- Is not hidden or detached from the DOM
+
+## Testing Patterns
+
+### Conditional Button Enabling
+
+```java
+// Button starts disabled
+ButtonElement save = ButtonElement.getByText(page, "Save");
+save.assertDisabled();
+
+// Fill required fields to enable button
+TextFieldElement name = TextFieldElement.getByLabel(page, "Name");
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+
+name.setValue("John");
+email.setValue("john@example.com");
+
+// Button should now be enabled
+save.assertEnabled();
+save.click();
+```
+
+### Disabled Form Fields
+
+```java
+// Test read-only mode
+CheckboxElement readOnlyToggle = CheckboxElement.getByLabel(page, "Read-only mode");
+readOnlyToggle.setChecked(true);
+
+TextFieldElement field = TextFieldElement.getByLabel(page, "Description");
+field.assertDisabled();
+```
+
+### Dynamic State Changes
+
+```java
+// Test that component state changes dynamically
+ButtonElement action = ButtonElement.getByText(page, "Process");
+action.assertEnabled();
+
+action.click();
+
+// Button disabled during processing
+action.assertDisabled();
+
+// Wait for processing to complete
+page.waitForTimeout(2000);
+
+action.assertEnabled();
+```
+
+## Related Interfaces
+
+- [FocusableElement](/api/shared/focusable) - Components that can be enabled/disabled are often focusable
+- [HasInputFieldElement](/api/shared/has-input-field) - Input fields typically support enabled/disabled state

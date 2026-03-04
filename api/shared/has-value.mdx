@@ -1,0 +1,117 @@
+---
+title: HasValueElement
+description: Mixin interface for components that expose a textual value through an input slot
+---
+
+## Overview
+
+`HasValueElement` is a mixin interface for Vaadin components that expose a textual `value` through an input slot. This interface provides methods to get, set, clear, and assert input values.
+
+## Methods
+
+### getInputLocator
+
+```java
+default Locator getInputLocator()
+```
+
+Returns the locator for the native input element inside the component.
+
+**Returns:** Locator for the element with `slot="input"` attribute
+
+---
+
+### getValue
+
+```java
+default String getValue()
+```
+
+Gets the current string value of the input field.
+
+**Returns:** The current value as a string
+
+---
+
+### setValue
+
+```java
+default void setValue(String value)
+```
+
+Sets the field value by filling the input and dispatching a change event.
+
+<ParamField path="value" type="String">
+  The value to set in the input field
+</ParamField>
+
+---
+
+### clear
+
+```java
+default void clear()
+```
+
+Clears the input value by setting it to an empty string.
+
+---
+
+### assertValue
+
+```java
+default void assertValue(String value)
+```
+
+Asserts that the input value matches the expected string using Playwright assertions.
+
+<ParamField path="value" type="String">
+  The expected value to assert against
+</ParamField>
+
+## Implementation Details
+
+This interface extends `HasLocatorElement` and provides default implementations for all methods. The value operations work on the input slot element, which is located using `*[slot="input"]`.
+
+The `setValue()` method not only fills the input but also dispatches a `change` event to ensure that client-side listeners are triggered.
+
+## Implementing Classes
+
+This interface is implemented through `HasInputFieldElement`, which is used by:
+
+- `TextFieldElement` (and its subclasses like `EmailFieldElement`, `PasswordFieldElement`, etc.)
+- `AbstractNumberFieldElement` (and its subclasses like `IntegerFieldElement`, `NumberFieldElement`)
+- `BigDecimalFieldElement`
+- `ComboBoxElement`
+- `MultiSelectComboBoxElement`
+- `SelectElement`
+- `DatePickerElement`
+- `DateTimePickerElement`
+- `TimePickerElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+
+// Get a text field by label
+TextFieldElement nameField = TextFieldElement.getByLabel(page, "Name");
+
+// Set a value
+nameField.setValue("John Doe");
+
+// Get the current value
+String currentValue = nameField.getValue();
+
+// Assert the value
+nameField.assertValue("John Doe");
+
+// Clear the field
+nameField.clear();
+nameField.assertValue("");
+```
+
+## See Also
+
+- [HasInputFieldElement](/api/shared/has-input-field) - Convenience interface that includes HasValueElement
+- [TextFieldElement](/api/text-field) - Example implementation

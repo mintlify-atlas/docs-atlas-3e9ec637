@@ -1,0 +1,102 @@
+---
+title: NotificationElement
+description: Playwright element wrapper for Vaadin Notification component testing
+---
+
+## Overview
+
+`NotificationElement` is a Playwright wrapper for notification cards `<vaadin-notification-card>`. It provides utilities to verify notification visibility and access notification content.
+
+**Component tag:** `vaadin-notification-card`
+
+**Implements:**
+- `HasThemeElement`
+- `HasStyleElement`
+
+## Constructors
+
+### NotificationElement(Page page)
+
+Create a `NotificationElement` from the page by locating the first `<vaadin-notification-card>` element.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+### NotificationElement(Locator locator)
+
+Create a `NotificationElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the notification element
+</ParamField>
+
+## Methods
+
+### isOpen()
+
+Check whether the notification is open (visible).
+
+**Returns:** `boolean` - True if the notification is visible
+
+### assertOpen()
+
+Assert that the notification is open and visible.
+
+**Verifies:** The element is visible in the DOM.
+
+### assertClosed()
+
+Assert that the notification is closed or hidden.
+
+**Verifies:** The element is hidden in the DOM.
+
+### getContentLocator()
+
+Get the locator for the notification content.
+
+**Returns:** `Locator` - The notification element itself (content is within the card)
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.NotificationElement;
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+
+// Trigger a notification
+ButtonElement openButton = ButtonElement.getByText(page, "Show notification");
+openButton.click();
+
+// Verify notification is shown
+NotificationElement notification = new NotificationElement(page);
+notification.assertOpen();
+
+// Verify notification content
+assertThat(notification.getContentLocator()).hasText("This is a notification.");
+
+// Wait for auto-close or verify it closes
+notification.assertClosed();
+
+// Notification with component content
+ButtonElement openComponentButton = ButtonElement.getByText(page, "Show component notification");
+openComponentButton.click();
+
+NotificationElement componentNotification = new NotificationElement(page);
+componentNotification.assertOpen();
+
+// Interact with buttons inside notification
+ButtonElement closeButton = ButtonElement.getByText(componentNotification.getContentLocator(), "Close");
+closeButton.click();
+componentNotification.assertClosed();
+
+// Verify theme and class
+notification.assertTheme("error");
+notification.assertCssClass("custom-notification");
+```
+
+## Notes
+
+- Notifications typically auto-close after a duration unless configured otherwise
+- The notification card appears as an overlay on the page
+- Multiple notifications can be shown simultaneously
+- Content can be plain text or component-based

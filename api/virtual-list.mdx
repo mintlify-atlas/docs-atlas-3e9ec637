@@ -1,0 +1,377 @@
+---
+title: VirtualListElement
+description: Playwright element wrapper for Vaadin Virtual List component
+---
+
+# VirtualListElement
+
+Playwright element wrapper for `<vaadin-virtual-list>` providing a virtualized scrollable list that lazily renders items as the user scrolls.
+
+## Component Tag
+
+`vaadin-virtual-list`
+
+## Implements
+
+- `FocusableElement` - Focus management
+- `HasStyleElement` - CSS class and style management
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-virtual-list>` element
+</ParamField>
+
+## Static Factory Methods
+
+### get
+
+Get the first virtual list on the page.
+
+```java
+VirtualListElement.get(Page page)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+## Property Methods
+
+### getRowCount
+
+Get the total number of items in the list.
+
+```java
+int getRowCount()
+```
+
+Returns total item count (including items not yet rendered).
+
+### getFirstVisibleRowIndex
+
+Get the index of the first row that is at least partially visible.
+
+```java
+int getFirstVisibleRowIndex()
+```
+
+Returns 0-based index of the first visible row.
+
+### getLastVisibleRowIndex
+
+Get the index of the last row that is at least partially visible.
+
+```java
+int getLastVisibleRowIndex()
+```
+
+Returns 0-based index of the last visible row.
+
+### getVisibleRowCount
+
+Get the number of currently visible rows.
+
+```java
+int getVisibleRowCount()
+```
+
+Returns count of rows visible in the viewport.
+
+### isRowInView
+
+Whether the given row index is currently visible in the viewport.
+
+```java
+boolean isRowInView(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index to check
+</ParamField>
+
+## Item Query Methods
+
+### getRenderedItems
+
+Get a locator matching all currently rendered child elements.
+
+```java
+Locator getRenderedItems()
+```
+
+### getItemByIndex
+
+Get the rendered DOM element at the given virtual index.
+
+```java
+Locator getItemByIndex(int index)
+```
+
+<ParamField path="index" type="int">
+  0-based virtual row index (must be currently in view)
+</ParamField>
+
+### getItemByText
+
+Get a rendered item containing the given text.
+
+```java
+Locator getItemByText(String text)
+```
+
+<ParamField path="text" type="String">
+  Text to search for
+</ParamField>
+
+## Component Query Methods
+
+### getItemComponent
+
+Get a typed component element from the rendered item at the given virtual index.
+
+```java
+<T extends VaadinElement> T getItemComponent(int index, Class<T> type)
+```
+
+<ParamField path="index" type="int">
+  0-based virtual row index (must be in view)
+</ParamField>
+
+<ParamField path="type" type="Class<T>">
+  Element class (e.g., ButtonElement.class)
+</ParamField>
+
+### getItemComponentByText
+
+Get a typed component element from the rendered item whose text matches.
+
+```java
+<T extends VaadinElement> T getItemComponentByText(String text, Class<T> type)
+```
+
+<ParamField path="text" type="String">
+  Text used to locate the item
+</ParamField>
+
+<ParamField path="type" type="Class<T>">
+  Element class (e.g., ButtonElement.class)
+</ParamField>
+
+### getComponent
+
+Get the first typed component element found anywhere in the currently rendered items.
+
+```java
+<T extends VaadinElement> T getComponent(Class<T> type)
+```
+
+<ParamField path="type" type="Class<T>">
+  Element class (e.g., ButtonElement.class)
+</ParamField>
+
+## Scroll Methods
+
+### scrollToRow
+
+Scroll the list so the given row index becomes visible.
+
+```java
+void scrollToRow(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### scrollToStart
+
+Scroll to the very beginning of the list.
+
+```java
+void scrollToStart()
+```
+
+### scrollToEnd
+
+Scroll to the very end of the list.
+
+```java
+void scrollToEnd()
+```
+
+## Assertion Methods
+
+### assertRowCount
+
+Assert the total number of items matches the expected count.
+
+```java
+void assertRowCount(int expected)
+```
+
+<ParamField path="expected" type="int">
+  Expected row count
+</ParamField>
+
+### assertRowInView
+
+Assert that the given row index is currently visible.
+
+```java
+void assertRowInView(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### assertRowNotInView
+
+Assert that the given row index is NOT currently visible.
+
+```java
+void assertRowNotInView(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### assertFirstVisibleRow
+
+Assert that the first visible row index equals the expected value.
+
+```java
+void assertFirstVisibleRow(int expected)
+```
+
+<ParamField path="expected" type="int">
+  Expected first visible row index
+</ParamField>
+
+### assertLastVisibleRow
+
+Assert that the last visible row index equals the expected value.
+
+```java
+void assertLastVisibleRow(int expected)
+```
+
+<ParamField path="expected" type="int">
+  Expected last visible row index
+</ParamField>
+
+### assertItemRendered
+
+Assert that an item containing the given text is currently rendered.
+
+```java
+void assertItemRendered(String text)
+```
+
+<ParamField path="text" type="String">
+  Text to look for
+</ParamField>
+
+### assertEmpty
+
+Assert the list has zero items.
+
+```java
+void assertEmpty()
+```
+
+## Usage Examples
+
+### Basic Virtual List Operations
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+int totalRows = virtualList.getRowCount();
+assertEquals(1000, totalRows);
+
+int visibleRows = virtualList.getVisibleRowCount();
+assertTrue(visibleRows < totalRows);
+```
+
+### Scroll and Check Visibility
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+virtualList.scrollToRow(500);
+virtualList.assertRowInView(500);
+
+int firstVisible = virtualList.getFirstVisibleRowIndex();
+int lastVisible = virtualList.getLastVisibleRowIndex();
+assertTrue(firstVisible <= 500 && 500 <= lastVisible);
+```
+
+### Access Item Content
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+// Get item by index
+Locator item = virtualList.getItemByIndex(10);
+assertThat(item).isVisible();
+
+// Get item by text
+Locator itemByText = virtualList.getItemByText("Item 42");
+assertThat(itemByText).hasText("Item 42");
+```
+
+### Work with Components in Items
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+// Get button from item at index 5
+ButtonElement button = virtualList.getItemComponent(5, ButtonElement.class);
+button.click();
+
+// Get first button in any rendered item
+ButtonElement anyButton = virtualList.getComponent(ButtonElement.class);
+assertThat(anyButton.getLocator()).isVisible();
+```
+
+### Scroll to Specific Position
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+// Scroll to start
+virtualList.scrollToStart();
+virtualList.assertFirstVisibleRow(0);
+
+// Scroll to end
+virtualList.scrollToEnd();
+int lastRow = virtualList.getRowCount() - 1;
+virtualList.assertRowInView(lastRow);
+```
+
+### Assert List State
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+virtualList.assertRowCount(1000);
+virtualList.assertItemRendered("Item 1");
+
+// Empty list
+VirtualListElement emptyList = VirtualListElement.get(page);
+emptyList.assertEmpty();
+```
+
+### Check Rendered Items
+
+```java
+VirtualListElement virtualList = VirtualListElement.get(page);
+
+Locator allRendered = virtualList.getRenderedItems();
+int renderedCount = allRendered.count();
+assertTrue(renderedCount > 0);
+assertTrue(renderedCount < virtualList.getRowCount());
+```

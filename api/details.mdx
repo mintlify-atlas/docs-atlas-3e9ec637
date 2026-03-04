@@ -1,0 +1,171 @@
+---
+title: DetailsElement
+description: Playwright element wrapper for Vaadin Details component
+---
+
+# DetailsElement
+
+Playwright element wrapper for `<vaadin-details>` providing helpers to open/close and access the summary and content areas.
+
+## Component Tag
+
+`vaadin-details`
+
+## Implements
+
+- `HasStyleElement` - CSS class and style management
+- `HasThemeElement` - Theme variant support
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-details>` element
+</ParamField>
+
+## Static Factory Methods
+
+### getBySummaryText
+
+Get a details component by its summary text.
+
+```java
+DetailsElement.getBySummaryText(Page page, String summary)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="summary" type="String">
+  Summary text to match
+</ParamField>
+
+## Methods
+
+### isOpen
+
+Whether the details is opened.
+
+```java
+boolean isOpen()
+```
+
+### setOpen
+
+Set the opened state by clicking the summary when necessary.
+
+```java
+void setOpen(boolean open)
+```
+
+<ParamField path="open" type="boolean">
+  Desired open state
+</ParamField>
+
+### getSummaryLocator
+
+Locator for the summary element.
+
+```java
+Locator getSummaryLocator()
+```
+
+### getSummaryText
+
+Text content of the summary element.
+
+```java
+String getSummaryText()
+```
+
+### getContentLocator
+
+Locator for the currently visible content container.
+
+```java
+Locator getContentLocator()
+```
+
+## Assertion Methods
+
+### assertEnabled
+
+Assert that the component is enabled.
+
+```java
+void assertEnabled()
+```
+
+### assertDisabled
+
+Assert that the component is disabled.
+
+```java
+void assertDisabled()
+```
+
+### assertOpened
+
+Assert that the details is opened.
+
+```java
+void assertOpened()
+```
+
+### assertClosed
+
+Assert that the details is closed.
+
+```java
+void assertClosed()
+```
+
+### assertContentVisible
+
+Assert that the content is visible.
+
+```java
+void assertContentVisible()
+```
+
+### assertContentNotVisible
+
+Assert that the content is not visible.
+
+```java
+void assertContentNotVisible()
+```
+
+## Usage Examples
+
+### Toggle Details Open/Close
+
+```java
+DetailsElement details = DetailsElement.getBySummaryText(page, "Click to expand");
+details.assertClosed();
+details.setOpen(true);
+details.assertOpened();
+details.assertContentVisible();
+```
+
+### Check Summary and Content
+
+```java
+DetailsElement details = DetailsElement.getBySummaryText(page, "More info");
+String summaryText = details.getSummaryText();
+assertEquals("More info", summaryText);
+
+if (details.isOpen()) {
+    assertThat(details.getContentLocator()).containsText("Additional details");
+}
+```
+
+### Work with Disabled Details
+
+```java
+DetailsElement details = new DetailsElement(page.locator("vaadin-details").first());
+details.assertDisabled();
+details.getSummaryLocator().click();
+details.assertClosed(); // Should still be closed
+```

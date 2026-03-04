@@ -1,0 +1,140 @@
+---
+title: SideNavigationItemElement
+description: Playwright element wrapper for Vaadin SideNavItem component testing
+---
+
+## Overview
+
+`SideNavigationItemElement` is a Playwright wrapper for `<vaadin-side-nav-item>`. It represents individual navigation items within a side navigation menu.
+
+**Component tag:** `vaadin-side-nav-item`
+
+**Implements:**
+- `HasEnabledElement`
+- `HasPrefixElement`
+- `HasSuffixElement`
+- `HasLabelElement`
+
+## Constructors
+
+### SideNavigationItemElement(Locator locator)
+
+Create a `SideNavigationItemElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the side navigation item element
+</ParamField>
+
+## Methods
+
+### isExpanded()
+
+Check if the item is expanded (showing child items).
+
+**Returns:** `boolean` - True if the item is expanded
+
+### assertExpanded()
+
+Assert that the item is expanded.
+
+**Verifies:** The element has the `expanded` attribute.
+
+### assertCollapsed()
+
+Assert that the item is collapsed.
+
+**Verifies:** The element does not have the `expanded` attribute.
+
+### assertEnabled()
+
+Assert that the item is enabled.
+
+**Verifies:** The element does not have the `disabled` attribute.
+
+### assertDisabled()
+
+Assert that the item is disabled.
+
+**Verifies:** The element has the `disabled` attribute.
+
+### assertCurrent()
+
+Assert that the item is the current/active navigation item.
+
+**Verifies:** The element has the `current` attribute.
+
+### assertNotCurrent()
+
+Assert that the item is not the current navigation item.
+
+**Verifies:** The element does not have the `current` attribute.
+
+### toggle()
+
+Toggle the expansion state of the item. This clicks the toggle button inside the item.
+
+**Note:** Only works for items with children that have a toggle button.
+
+### navigate()
+
+Navigate by clicking the internal link of the navigation item.
+
+**Uses:** ARIA role `link` to find and click the navigation link.
+
+### getLabelLocator()
+
+Get the locator for the item's label.
+
+**Returns:** `Locator` - The item element itself (label is part of the component)
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.SideNavigationElement;
+import org.vaadin.addons.dramafinder.element.SideNavigationItemElement;
+
+// Get navigation and access items
+SideNavigationElement nav = SideNavigationElement.getByLabel(page, "My App");
+
+// Check item state
+SideNavigationItemElement dashboard = nav.getItem("Dashboard");
+dashboard.assertVisible();
+dashboard.assertEnabled();
+dashboard.assertLabel("Dashboard");
+
+// Check current state
+SideNavigationItemElement messages = nav.getItem("Messages");
+messages.assertCurrent();
+
+SideNavigationItemElement reports = nav.getItem("Reports");
+reports.assertNotCurrent();
+reports.assertDisabled();
+
+// Work with expandable items
+SideNavigationItemElement admin = nav.getItem("Admin");
+admin.assertCollapsed();
+admin.toggle();
+admin.assertExpanded();
+admin.toggle();
+admin.assertCollapsed();
+
+// Navigate to a page
+SideNavigationItemElement settings = nav.getItem("Settings");
+settings.navigate();
+assertThat(page).hasURL("/settings");
+
+// Clicking also triggers navigation
+dashboard.click();
+assertThat(page).hasURL("/dashboard");
+```
+
+## Notes
+
+- Items with children can be expanded/collapsed using the `toggle()` method
+- The `current` attribute indicates the active navigation item
+- Disabled items cannot be clicked but may still be visible
+- The `navigate()` method uses the internal link element with ARIA role `link`
+
+## Related Elements
+
+- [SideNavigationElement](/api/side-navigation) - Parent side navigation container

@@ -1,0 +1,211 @@
+---
+title: Element Lookup
+description: Learn how to find Vaadin elements using factory methods and accessibility-first patterns
+---
+
+# Element Lookup
+
+Drama Finder provides static factory methods on element classes to locate Vaadin components using accessibility-first patterns. Instead of writing complex CSS selectors or XPath expressions, you can find elements by their accessible names, labels, and text content.
+
+## Factory Method Pattern
+
+Every element class provides static factory methods that combine tag names with ARIA role queries for robust, accessible element lookup.
+
+### Basic Lookup by Label
+
+Most input fields support `getByLabel()` which finds elements by their accessible label:
+
+```java
+// Find a text field by its label
+TextFieldElement nameField = TextFieldElement.getByLabel(page, "Full Name");
+
+// Find a date picker by its label
+DatePickerElement birthDate = DatePickerElement.getByLabel(page, "Birth Date");
+
+// Find a checkbox by its label
+CheckboxElement termsCheckbox = CheckboxElement.getByLabel(page, "I agree to the terms");
+```
+
+<Note>
+  Factory methods use ARIA roles internally to ensure accurate matching. For example, `TextFieldElement.getByLabel()` searches for elements with the `TEXTBOX` role.
+</Note>
+
+### Lookup by Text Content
+
+Buttons and other text-based elements support `getByText()` to find elements by their visible text:
+
+```java
+// Find a button by its text
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+ButtonElement cancelButton = ButtonElement.getByText(page, "Cancel");
+
+// getByLabel is an alias for getByText on buttons
+ButtonElement submitButton = ButtonElement.getByLabel(page, "Submit");
+```
+
+## ARIA Role-Based Lookup
+
+Factory methods leverage Playwright's `getByRole()` with appropriate ARIA roles for each component type:
+
+```java
+// TextFieldElement uses AriaRole.TEXTBOX
+public static TextFieldElement getByLabel(Page page, String label) {
+    return new TextFieldElement(
+        page.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.TEXTBOX,
+                    new Page.GetByRoleOptions().setName(label))))
+            .first());
+}
+
+// ComboBoxElement uses AriaRole.COMBOBOX
+public static ComboBoxElement getByLabel(Page page, String label) {
+    return new ComboBoxElement(
+        page.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.COMBOBOX,
+                    new Page.GetByRoleOptions().setName(label))))
+            .first());
+}
+```
+
+<Tip>
+  Using ARIA roles ensures your tests align with how assistive technologies and real users interact with your application.
+</Tip>
+
+## Scoped Lookups
+
+All factory methods support both page-level and scoped lookups. Scoped lookups restrict the search to a specific container:
+
+```java
+// Page-level lookup
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+
+// Scoped lookup within a dialog
+DialogElement dialog = DialogElement.get(page);
+ButtonElement dialogSaveButton = ButtonElement.getByText(dialog.getLocator(), "Save");
+
+// Scoped lookup within a form
+Locator formLocator = page.locator("form.user-details");
+TextFieldElement emailField = TextFieldElement.getByLabel(formLocator, "Email");
+```
+
+### Scoped Lookup Example
+
+```java
+// Multiple forms on the page - scope to avoid ambiguity
+Locator loginForm = page.locator("form#login");
+Locator signupForm = page.locator("form#signup");
+
+TextFieldElement loginEmail = TextFieldElement.getByLabel(loginForm, "Email");
+TextFieldElement signupEmail = TextFieldElement.getByLabel(signupForm, "Email");
+
+loginEmail.setValue("user@example.com");
+signupEmail.setValue("newuser@example.com");
+```
+
+## Lookup by ID or Custom Selector
+
+Some elements like Grid provide additional lookup methods:
+
+```java
+// Grid lookup by ID
+GridElement grid = GridElement.getById(page, "user-grid");
+
+// First grid on the page
+GridElement firstGrid = GridElement.get(page);
+
+// Grid within a container
+Locator container = page.locator(".data-panel");
+GridElement scopedGrid = GridElement.get(container);
+```
+
+For elements without dedicated factory methods, construct them directly:
+
+```java
+// Direct construction with custom locator
+AccordionElement accordion = new AccordionElement(page.locator(".custom-css"));
+```
+
+## Common ARIA Roles
+
+<Warning>
+  Using the wrong ARIA role will cause your lookups to fail. Always verify the role of the internal input element.
+</Warning>
+
+Here's a reference of ARIA roles used by common Vaadin components:
+
+| Component Type | ARIA Role | Factory Method |
+|---------------|-----------|----------------|
+| Text Field | `TEXTBOX` | `getByLabel()` |
+| Number Field | `SPINBUTTON` | `getByLabel()` |
+| Date Picker | `COMBOBOX` | `getByLabel()` |
+| Time Picker | `COMBOBOX` | `getByLabel()` |
+| Combo Box | `COMBOBOX` | `getByLabel()` |
+| Button | `BUTTON` | `getByText()` |
+| Checkbox | `CHECKBOX` | `getByLabel()` |
+| Radio Button | `RADIO` | `getByLabel()` |
+
+## Advanced Options
+
+Factory methods that accept custom role options provide flexibility for complex scenarios:
+
+```java
+// Button with exact name matching
+ButtonElement exactButton = ButtonElement.getByText(page,
+    new Page.GetByRoleOptions()
+        .setName("Save")
+        .setExact(true)
+);
+
+// Button that is not disabled
+ButtonElement enabledButton = ButtonElement.getByText(page,
+    new Page.GetByRoleOptions()
+        .setName("Submit")
+        .setDisabled(false)
+);
+```
+
+## Best Practices
+
+<Accordion title="Prefer accessible names over CSS selectors">
+  Always use factory methods that leverage accessible names (labels, text content) rather than CSS selectors or XPath. This makes tests more maintainable and accessible.
+
+  ```java
+  // Good: Accessible and maintainable
+  TextFieldElement nameField = TextFieldElement.getByLabel(page, "Full Name");
+
+  // Bad: Brittle and not accessibility-focused
+  TextFieldElement nameField = new TextFieldElement(page.locator("#name-field"));
+  ```
+</Accordion>
+
+<Accordion title="Use .first() for non-unique matches">
+  When your locator might match multiple elements, always use `.first()` or scope your query:
+
+  ```java
+  // Locator automatically uses .first() in factory methods
+  ButtonElement button = ButtonElement.getByText(page, "Submit");
+
+  // When constructing directly, add .first()
+  ButtonElement firstButton = new ButtonElement(
+      page.locator("vaadin-button").first()
+  );
+  ```
+</Accordion>
+
+<Accordion title="Scope lookups to reduce ambiguity">
+  When multiple elements share the same label or text, use scoped lookups:
+
+  ```java
+  // Scope to a specific dialog or container
+  Locator dialogLocator = page.locator("vaadin-dialog[opened]");
+  ButtonElement dialogButton = ButtonElement.getByText(dialogLocator, "OK");
+  ```
+</Accordion>
+
+## Related Concepts
+
+- [ARIA Roles](/concepts/aria-roles) - Deep dive into ARIA role mapping
+- [Locator Patterns](/concepts/locator-patterns) - Advanced locator delegation patterns
+- [Assertions](/concepts/assertions) - Assert element state with auto-retry

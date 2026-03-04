@@ -1,0 +1,222 @@
+---
+title: UploadElement
+description: Playwright element wrapper for Vaadin Upload component testing
+---
+
+## Overview
+
+`UploadElement` is a Playwright wrapper for `<vaadin-upload>`. It provides helpers to feed files via the native file input, inspect the file list entries, and assert upload completion using the file row state.
+
+**Component tag:** `vaadin-upload`
+
+**Implements:**
+- `HasEnabledElement`
+- `HasValidationPropertiesElement`
+- `HasThemeElement`
+- `FocusableElement`
+
+## Constructors
+
+### UploadElement(Locator locator)
+
+Create a new `UploadElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-upload>` element
+</ParamField>
+
+## Internal Locator Methods
+
+### getFileInputLocator()
+
+Get the locator for the native `input[type=file]` element.
+
+**Returns:** `Locator` - The file input locator
+
+### getUploadButtonLocator()
+
+Get the locator for the primary upload button.
+
+**Returns:** `Locator` - The upload button locator
+
+### getFileItemLocator(String fileName)
+
+Get the locator for a specific file row.
+
+<ParamField path="fileName" type="String" required>
+  The file name to search for
+</ParamField>
+
+**Returns:** `Locator` - The matching file row locator (`<vaadin-upload-file>`)
+
+### getFileStatusLocator(String fileName)
+
+Get the locator for the status cell of a given file row.
+
+<ParamField path="fileName" type="String" required>
+  The file name to search for
+</ParamField>
+
+**Returns:** `Locator` - The matching status locator
+
+## Action Methods
+
+### uploadFiles(Path... files)
+
+Upload one or more files by feeding the hidden input.
+
+<ParamField path="files" type="Path..." required>
+  File paths to upload (varargs)
+</ParamField>
+
+### removeFile(String fileName)
+
+Remove a file from the list using the remove button.
+
+<ParamField path="fileName" type="String" required>
+  The file name to remove
+</ParamField>
+
+## Assertion Methods
+
+### assertHasFile(String fileName)
+
+Assert that a file is listed in the upload file list.
+
+<ParamField path="fileName" type="String" required>
+  The expected file name
+</ParamField>
+
+### assertNoFile(String fileName)
+
+Assert that a file is not present in the upload file list.
+
+<ParamField path="fileName" type="String" required>
+  The file name that should be absent
+</ParamField>
+
+### assertFileComplete(String fileName)
+
+Assert that a file row is marked complete.
+
+<ParamField path="fileName" type="String" required>
+  The file name to check
+</ParamField>
+
+**Verifies:** The file item has the `complete` attribute.
+
+### assertMaxFilesReached()
+
+Assert that the maximum number of files has been reached.
+
+**Verifies:** The upload element has the `max-files-reached` attribute.
+
+## Interface Overrides
+
+### getFocusLocator()
+
+Get the locator for focus operations (targets the upload button).
+
+**Returns:** `Locator` - The upload button locator
+
+### getEnabledLocator()
+
+Get the locator for enabled/disabled state checks (targets the upload button).
+
+**Returns:** `Locator` - The upload button locator
+
+## Static Factory Methods
+
+### getByButtonText(Page page, String buttonText)
+
+Get the `UploadElement` by the accessible text of its upload button.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+<ParamField path="buttonText" type="String" required>
+  The accessible text of the upload button (uses ARIA role BUTTON)
+</ParamField>
+
+**Returns:** `UploadElement` - The matching upload element
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.UploadElement;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+@TempDir
+Path tempDir;
+
+@Test
+public void testSingleFileUpload() throws IOException {
+    // Create a test file
+    Path file = Files.writeString(tempDir.resolve("single.txt"), "single");
+    
+    // Get upload element by button text
+    UploadElement upload = UploadElement.getByButtonText(page, "Select single file");
+    
+    // Upload the file
+    upload.uploadFiles(file);
+    
+    // Verify file is listed and complete
+    upload.assertHasFile("single.txt");
+    upload.assertFileComplete("single.txt");
+}
+
+@Test
+public void testMultiFileUploadAndClear() throws IOException {
+    Path first = Files.writeString(tempDir.resolve("first.txt"), "first");
+    Path second = Files.writeString(tempDir.resolve("second.txt"), "second");
+    Path third = Files.writeString(tempDir.resolve("third.txt"), "third");
+    
+    UploadElement upload = UploadElement.getByButtonText(page, "Select multiple files");
+    
+    // Upload multiple files at once
+    upload.uploadFiles(first, second);
+    
+    upload.assertHasFile("first.txt");
+    upload.assertHasFile("second.txt");
+    upload.assertFileComplete("first.txt");
+    upload.assertFileComplete("second.txt");
+    
+    // Upload additional file
+    upload.uploadFiles(third);
+    upload.assertHasFile("third.txt");
+    upload.assertFileComplete("third.txt");
+    upload.assertMaxFilesReached();
+    
+    // Remove files
+    upload.removeFile("first.txt");
+    upload.assertNoFile("first.txt");
+    
+    upload.removeFile("second.txt");
+    upload.assertNoFile("second.txt");
+    
+    upload.removeFile("third.txt");
+    upload.assertNoFile("third.txt");
+}
+
+@Test
+public void testFileRejected() throws IOException {
+    Path file = Files.writeString(tempDir.resolve("first.forbidden"), "first");
+    
+    UploadElement upload = UploadElement.getByButtonText(page, "Select multiple files");
+    upload.uploadFiles(file);
+    
+    // Verify rejected file is not in the list
+    upload.assertNoFile("first.forbidden");
+}
+```
+
+## Notes
+
+- File upload uses the native `input[type=file]` element via `setInputFiles()`
+- File rows are represented as `<vaadin-upload-file>` elements
+- The `complete` attribute indicates successful upload
+- Factory lookup uses the upload button's accessible name with ARIA role `button`
+- Multiple files can be uploaded at once by passing multiple paths
+- Focus and enabled/disabled operations target the upload button

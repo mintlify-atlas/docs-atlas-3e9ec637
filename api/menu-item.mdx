@@ -1,0 +1,83 @@
+---
+title: MenuItemElement
+description: Playwright element wrapper for Vaadin MenuBar menu item testing
+---
+
+## Overview
+
+`MenuItemElement` is a Playwright wrapper for individual menu items `<vaadin-menu-bar-button>`. It represents clickable menu items within menu bars and submenu overlays.
+
+**Component tag:** `vaadin-menu-bar-button`
+
+**Implements:**
+- `HasThemeElement`
+- `HasStyleElement`
+- `HasAriaLabelElement`
+
+## Constructors
+
+### MenuItemElement(Locator locator)
+
+Create a `MenuItemElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the menu item element
+</ParamField>
+
+## Methods
+
+### assertExpanded()
+
+Assert that the menu item is expanded (shows submenu).
+
+**Verifies:** The element has the `expanded` attribute.
+
+### assertCollapsed()
+
+Assert that the menu item is collapsed (submenu is not visible).
+
+**Verifies:** The element does not have the `expanded` attribute.
+
+## Static Factory Methods
+
+### getByLabel(Locator locator, String label)
+
+Get a menu item by its accessible label within a scope.
+
+<ParamField path="locator" type="Locator" required>
+  The parent locator (menu bar or menu overlay) to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the menu item (uses ARIA role MENUITEM)
+</ParamField>
+
+**Returns:** `MenuItemElement` - The menu item with the specified label
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.MenuBarElement;
+import org.vaadin.addons.dramafinder.element.MenuItemElement;
+
+// Get menu item from menu bar
+MenuBarElement menuBar = new MenuBarElement(page);
+MenuItemElement viewItem = menuBar.getMenuItemElement("View");
+
+// Click the item
+viewItem.click();
+
+// Open submenu and verify expanded state
+MenuItemElement shareItem = menuBar.getMenuItemElement("Share");
+shareItem.click();
+shareItem.assertExpanded();
+
+// Access items using static factory
+MenuItemElement editItem = MenuItemElement.getByLabel(menuBar.getLocator(), "Edit");
+editItem.click();
+```
+
+## Related Elements
+
+- [MenuBarElement](/api/menu-bar) - Top-level menu bar
+- [MenuElement](/api/menu) - Submenu overlay list

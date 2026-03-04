@@ -1,0 +1,262 @@
+---
+title: HasPlaceholderElement
+description: Mixin interface for components that support the placeholder attribute
+---
+
+## Overview
+
+`HasPlaceholderElement` provides methods for interacting with the placeholder text of Vaadin input components. Placeholders provide hints to users about what to enter in a field and are displayed when the field is empty.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasPlaceholderElement`
+
+## Methods
+
+### setPlaceholder()
+
+```java
+default void setPlaceholder(String placeholder)
+```
+
+Sets the placeholder attribute via JavaScript evaluation.
+
+<ParamField path="placeholder" type="String" required>
+  The placeholder text to set
+</ParamField>
+
+---
+
+### getPlaceholder()
+
+```java
+default String getPlaceholder()
+```
+
+Retrieves the current placeholder text by evaluating the element's `placeholder` property.
+
+**Returns:** `String` - The placeholder text
+
+---
+
+### assertPlaceholder()
+
+```java
+default void assertPlaceholder(String placeholder)
+```
+
+Asserts that the placeholder attribute matches the expected text.
+
+<ParamField path="placeholder" type="String" required>
+  The expected placeholder text
+</ParamField>
+
+**Throws:** `AssertionError` if the placeholder does not match
+
+## Implementing Classes
+
+The following element classes implement `HasPlaceholderElement`:
+
+- `TextFieldElement` (and all subclasses: `TextAreaElement`, `PasswordFieldElement`, `EmailFieldElement`)
+- All text input components that support placeholder text
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import com.microsoft.playwright.Page;
+
+public class PlaceholderTest {
+    void testPlaceholder(Page page) {
+        TextFieldElement searchField = TextFieldElement.getByLabel(page, "Search");
+        TextFieldElement emailField = TextFieldElement.getByLabel(page, "Email");
+        
+        // Assert placeholder text
+        searchField.assertPlaceholder("Enter search term...");
+        emailField.assertPlaceholder("user@example.com");
+        
+        // Get placeholder value
+        String placeholder = emailField.getPlaceholder();
+        System.out.println("Email placeholder: " + placeholder);
+        
+        // Programmatically set placeholder (less common in tests)
+        searchField.setPlaceholder("Search products");
+        searchField.assertPlaceholder("Search products");
+    }
+}
+```
+
+## Implementation Details
+
+### DOM Property vs Attribute
+
+The implementation uses JavaScript evaluation to get and set the placeholder:
+
+```java
+// Getting placeholder
+getLocator().evaluate("el => el.placeholder").toString();
+
+// Setting placeholder
+getLocator().evaluate("(el, placeholder) => el.placeholder = placeholder", placeholder);
+```
+
+However, the assertion uses the HTML attribute:
+
+```java
+assertThat(getLocator()).hasAttribute("placeholder", placeholder);
+```
+
+This works because Vaadin synchronizes the DOM property with the HTML attribute.
+
+### Placeholder Visibility
+
+Placeholders are only visible when:
+- The field is empty
+- The field does not have focus (in some browsers)
+- The field is not disabled
+
+## Testing Patterns
+
+### Test Placeholder Content
+
+```java
+// Verify helpful placeholder text is present
+TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+username.assertPlaceholder("Enter your username");
+
+TextFieldElement phone = TextFieldElement.getByLabel(page, "Phone");
+phone.assertPlaceholder("(555) 555-5555");
+```
+
+### Test Placeholder Disappears on Input
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Search");
+
+// Placeholder visible when empty
+field.assertValue("");
+field.assertPlaceholder("Search...");
+
+// Placeholder no longer relevant once user types
+field.setValue("query");
+field.assertValue("query");
+// Note: Placeholder attribute still exists, just not displayed
+field.assertPlaceholder("Search...");
+```
+
+### Test Placeholder as Documentation
+
+```java
+// Placeholders can guide users on format expectations
+TextFieldElement date = TextFieldElement.getByLabel(page, "Date");
+date.assertPlaceholder("MM/DD/YYYY");
+
+TextFieldElement ssn = TextFieldElement.getByLabel(page, "SSN");
+ssn.assertPlaceholder("XXX-XX-XXXX");
+```
+
+### Test Placeholder in Different Languages
+
+```java
+// Test i18n placeholder text
+page.navigate("http://localhost:8080?lang=es");
+
+TextFieldElement search = TextFieldElement.getByLabel(page, "Buscar");
+search.assertPlaceholder("Ingrese término de búsqueda...");
+```
+
+### Test Dynamic Placeholder Changes
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Input");
+
+// Initial placeholder
+field.assertPlaceholder("Enter value");
+
+// Change context affects placeholder
+SelectElement type = SelectElement.getByLabel(page, "Type");
+type.selectByText("Email");
+
+field.assertPlaceholder("user@example.com");
+```
+
+## Best Practices
+
+### Don't Over-Rely on Placeholders
+
+Placeholders should supplement, not replace, field labels:
+
+```java
+// Good: Label and helpful placeholder
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email Address");
+email.assertLabel("Email Address");
+email.assertPlaceholder("you@example.com");
+
+// Bad: Placeholder as only hint (accessibility issue)
+// Don't rely solely on placeholder without a proper label
+```
+
+### Test Placeholder Clarity
+
+Ensure placeholders provide clear guidance:
+
+```java
+// Good: Specific format example
+field.assertPlaceholder("(555) 555-5555");
+
+// Less helpful: Vague placeholder
+// field.assertPlaceholder("Phone");
+```
+
+### Use Placeholders for Examples
+
+Placeholders work well for showing format examples:
+
+```java
+TextFieldElement url = TextFieldElement.getByLabel(page, "Website");
+url.assertPlaceholder("https://example.com");
+
+TextFieldElement time = TextFieldElement.getByLabel(page, "Time");
+time.assertPlaceholder("14:30");
+```
+
+### Accessibility Considerations
+
+Placeholders should not be the only way to convey important information:
+
+```java
+// Good: Important info in label, format in placeholder
+field.assertLabel("Phone Number (required)");
+field.assertPlaceholder("555-555-5555");
+
+// Bad: Critical info only in placeholder
+// field.assertPlaceholder("Required: 555-555-5555");
+```
+
+## Common Use Cases
+
+### Search Fields
+
+```java
+TextFieldElement search = TextFieldElement.getByLabel(page, "Search");
+search.assertPlaceholder("Search products, categories, or brands...");
+```
+
+### Format Examples
+
+```java
+TextFieldElement zip = TextFieldElement.getByLabel(page, "ZIP Code");
+zip.assertPlaceholder("12345 or 12345-6789");
+```
+
+### Optional Fields
+
+```java
+TextFieldElement middle = TextFieldElement.getByLabel(page, "Middle Name");
+middle.assertPlaceholder("Optional");
+```
+
+## Related Interfaces
+
+- [HasValueElement](/api/shared/has-value) - Manages the actual input value
+- [HasLabelElement](/api/shared/has-label) - Provides the field label
+- [HasHelperElement](/api/shared/has-helper) - For more detailed help text below the field
+- [HasClearButtonElement](/api/shared/has-clear-button) - Allows clearing the input

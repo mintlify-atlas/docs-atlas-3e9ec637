@@ -1,0 +1,156 @@
+---
+title: PlaywrightElement
+description: Annotation for marking Vaadin component element wrappers with their HTML tag name
+---
+
+## Overview
+
+`@PlaywrightElement` is a runtime annotation used to associate a Drama Finder element class with its corresponding Vaadin component HTML tag name. This annotation is applied to element wrapper classes that extend `VaadinElement`.
+
+## Annotation Details
+
+<ParamField path="@Target" type="ElementType.TYPE">
+  This annotation can only be applied to class declarations
+</ParamField>
+
+<ParamField path="@Retention" type="RetentionPolicy.RUNTIME">
+  The annotation is retained at runtime and accessible via reflection
+</ParamField>
+
+<ParamField path="@Inherited" type="boolean">
+  The annotation is inherited by subclasses
+</ParamField>
+
+## Annotation Parameter
+
+### value()
+
+Specifies the HTML tag name for the Vaadin component.
+
+<ParamField path="value" type="String" required>
+  The HTML tag name of the Vaadin component (e.g., `vaadin-button`, `vaadin-text-field`)
+</ParamField>
+
+<ResponseField name="return" type="String">
+  The tag name for the element
+</ResponseField>
+
+## Usage Examples
+
+### Basic Usage
+
+```java
+@PlaywrightElement(ButtonElement.FIELD_TAG_NAME)
+public class ButtonElement extends VaadinElement
+        implements FocusableElement, HasAriaLabelElement, HasEnabledElement {
+    
+    public static final String FIELD_TAG_NAME = "vaadin-button";
+    
+    public ButtonElement(Locator locator) {
+        super(locator);
+    }
+    
+    // Component-specific methods...
+}
+```
+
+### With Static Tag Name Constant
+
+```java
+@PlaywrightElement(TextFieldElement.FIELD_TAG_NAME)
+public class TextFieldElement extends VaadinElement {
+    
+    public static final String FIELD_TAG_NAME = "vaadin-text-field";
+    
+    public TextFieldElement(Locator locator) {
+        super(locator);
+    }
+    
+    public static TextFieldElement getByLabel(Page page, String label) {
+        return new TextFieldElement(
+            page.locator(FIELD_TAG_NAME)
+                .filter(new Locator.FilterOptions()
+                    .setHas(page.getByRole(AriaRole.TEXTBOX,
+                        new Page.GetByRoleOptions().setName(label))))
+                .first());
+    }
+}
+```
+
+### Inherited Annotation
+
+Since `@PlaywrightElement` is marked with `@Inherited`, subclasses automatically inherit the annotation:
+
+```java
+@PlaywrightElement(TextFieldElement.FIELD_TAG_NAME)
+public class TextFieldElement extends VaadinElement {
+    public static final String FIELD_TAG_NAME = "vaadin-text-field";
+    // ...
+}
+
+// EmailFieldElement inherits the @PlaywrightElement annotation
+public class EmailFieldElement extends TextFieldElement {
+    public static final String FIELD_TAG_NAME = "vaadin-email-field";
+    
+    public EmailFieldElement(Locator locator) {
+        super(locator);
+    }
+}
+```
+
+## Common Tag Names
+
+Here are some commonly used Vaadin component tag names:
+
+| Component | Tag Name |
+|-----------|----------|
+| Button | `vaadin-button` |
+| Text Field | `vaadin-text-field` |
+| Password Field | `vaadin-password-field` |
+| Email Field | `vaadin-email-field` |
+| Number Field | `vaadin-number-field` |
+| Text Area | `vaadin-text-area` |
+| Checkbox | `vaadin-checkbox` |
+| Radio Button | `vaadin-radio-button` |
+| Select | `vaadin-select` |
+| Combo Box | `vaadin-combo-box` |
+| Date Picker | `vaadin-date-picker` |
+| Time Picker | `vaadin-time-picker` |
+| Grid | `vaadin-grid` |
+| Dialog | `vaadin-dialog` |
+
+## Purpose and Benefits
+
+### Runtime Introspection
+
+The annotation enables runtime introspection of element classes to determine their associated Vaadin component tag:
+
+```java
+PlaywrightElement annotation = ButtonElement.class.getAnnotation(PlaywrightElement.class);
+String tagName = annotation.value();
+// tagName = "vaadin-button"
+```
+
+### Framework Integration
+
+The annotation can be used by testing frameworks or tooling to:
+
+- Automatically generate locators based on tag names
+- Validate that element classes match their corresponding Vaadin components
+- Generate documentation or test reports
+- Provide IDE autocomplete suggestions
+
+### Convention and Documentation
+
+By requiring the annotation on all element classes, Drama Finder ensures:
+
+- Consistent naming conventions across element wrappers
+- Clear documentation of which Vaadin component each class wraps
+- Easy identification of supported components
+
+## Notes
+
+- Always define the tag name as a public static final constant (e.g., `FIELD_TAG_NAME`) and reference it in the annotation.
+- The annotation value should match the exact HTML tag name used by the Vaadin component.
+- The `@Inherited` property means child classes inherit the annotation, but you may want to override it if the child represents a different tag.
+- This annotation is required for all classes that extend `VaadinElement` in the Drama Finder library.

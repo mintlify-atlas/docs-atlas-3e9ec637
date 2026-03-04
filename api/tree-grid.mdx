@@ -1,0 +1,297 @@
+---
+title: TreeGridElement
+description: Playwright element wrapper for Vaadin Tree Grid component
+---
+
+# TreeGridElement
+
+Playwright element wrapper for Vaadin Tree Grid, extending `GridElement` with tree-specific APIs for expanding/collapsing rows, querying hierarchy levels, and performing bulk operations by level.
+
+## Component Tag
+
+`vaadin-grid` (same as Grid, with tree-specific features)
+
+## Inheritance
+
+Extends `GridElement` - all Grid methods are available plus tree-specific methods.
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-grid>` element backed by a TreeGrid
+</ParamField>
+
+## Static Factory Methods
+
+### get
+
+Get the first tree grid on the page or within a parent locator.
+
+```java
+TreeGridElement.get(Page page)
+TreeGridElement.get(Locator parent)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="parent" type="Locator">
+  Parent locator to search within
+</ParamField>
+
+### getById
+
+Get a tree grid by its id attribute.
+
+```java
+TreeGridElement.getById(Page page, String id)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="id" type="String">
+  Element id
+</ParamField>
+
+## Tree Row Query Methods
+
+### findTreeRow
+
+Find the tree row at the given index, returning a TreeRowElement.
+
+```java
+Optional<TreeRowElement> findTreeRow(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+Returns a `TreeRowElement` that exposes tree-specific state and actions.
+
+### isRowExpanded
+
+Whether the row at the given index is expanded.
+
+```java
+boolean isRowExpanded(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### isRowCollapsed
+
+Whether the row is collapsed (has children but is not expanded).
+
+```java
+boolean isRowCollapsed(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### isRowLeaf
+
+Whether the row is a leaf node (has no children).
+
+```java
+boolean isRowLeaf(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### getRowLevel
+
+Get the hierarchy level of the row (0-based; root items are level 0).
+
+```java
+int getRowLevel(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### getExpandedRowCount
+
+Get the number of currently visible expanded rows.
+
+```java
+int getExpandedRowCount()
+```
+
+## Expand/Collapse Methods
+
+### expandRow
+
+Expand the row at the given index. Does nothing if already expanded or is a leaf.
+
+```java
+void expandRow(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### collapseRow
+
+Collapse the row at the given index. Does nothing if already collapsed or is a leaf.
+
+```java
+void collapseRow(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+### toggleRow
+
+Toggle the expand/collapse state. Does nothing if the row is a leaf.
+
+```java
+void toggleRow(int rowIndex)
+```
+
+<ParamField path="rowIndex" type="int">
+  0-based row index
+</ParamField>
+
+## Inner Class: TreeRowElement
+
+Extends `GridElement.RowElement` with tree-specific state queries and actions.
+
+### Methods
+
+- `Locator getTreeToggleLocator()` - Get the tree toggle locator
+- `boolean isExpanded()` - Whether the row is expanded
+- `boolean isLeaf()` - Whether the row is a leaf
+- `boolean isCollapsed()` - Whether the row is collapsed
+- `int getLevel()` - Get the hierarchy level
+- `void expand()` - Expand the row
+- `void collapse()` - Collapse the row
+- `void toggle()` - Toggle expand/collapse state
+
+## Usage Examples
+
+### Basic Tree Operations
+
+```java
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+// Check row state
+true(treeGrid.isRowExpanded(0));
+assertFalse(treeGrid.isRowLeaf(0));
+assertEquals(0, treeGrid.getRowLevel(0));
+```
+
+### Expand and Collapse Rows
+
+```java
+TreeGridElement treeGrid = TreeGridElement.getById(page, "tree-grid");
+
+// Expand parent row
+treeGrid.expandRow(0);
+true(treeGrid.isRowExpanded(0));
+
+// Collapse parent row
+treeGrid.collapseRow(0);
+assertFalse(treeGrid.isRowExpanded(0));
+```
+
+### Work with TreeRowElement
+
+```java
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+var treeRow = treeGrid.findTreeRow(0);
+if (treeRow.isPresent()) {
+    TreeRowElement row = treeRow.get();
+    
+    assertFalse(row.isLeaf());
+    assertEquals(0, row.getLevel());
+    
+    row.expand();
+    assertTrue(row.isExpanded());
+    
+    // Access cell content
+    CellElement cell = row.getCell(0);
+    assertThat(cell.getCellContentLocator()).hasText("Parent Item");
+}
+```
+
+### Check Hierarchy Levels
+
+```java
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+// Root level
+assertEquals(0, treeGrid.getRowLevel(0));
+
+// Expand and check child level
+treeGrid.expandRow(0);
+assertEquals(1, treeGrid.getRowLevel(1));
+```
+
+### Count Expanded Rows
+
+```java
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+treeGrid.expandRow(0);
+treeGrid.expandRow(2);
+
+int expandedCount = treeGrid.getExpandedRowCount();
+assertEquals(2, expandedCount);
+```
+
+### Toggle Row State
+
+```java
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+if (treeGrid.isRowExpanded(0)) {
+    treeGrid.toggleRow(0); // Will collapse
+} else {
+    treeGrid.toggleRow(0); // Will expand
+}
+```
+
+### Check Leaf Nodes
+
+```java
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+// Root is not a leaf
+assertFalse(treeGrid.isRowLeaf(0));
+
+// Expand to see children
+treeGrid.expandRow(0);
+
+// Child might be a leaf
+if (treeGrid.isRowLeaf(1)) {
+    System.out.println("Row 1 is a leaf node");
+}
+```
+
+### Work with Multi-select
+
+```java
+// TreeGrid supports all Grid selection methods
+TreeGridElement treeGrid = TreeGridElement.get(page);
+
+treeGrid.expandRow(0);
+treeGrid.select(0);
+treeGrid.select(1);
+
+assertEquals(2, treeGrid.getSelectedItemCount());
+```

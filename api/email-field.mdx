@@ -1,0 +1,175 @@
+---
+title: EmailFieldElement
+description: Playwright element wrapper for Vaadin email fields
+---
+
+## Overview
+
+The `EmailFieldElement` class is a Playwright wrapper for the `<vaadin-email-field>` component. It extends `TextFieldElement` with email-specific validation.
+
+## Component Tag
+
+`<vaadin-email-field>`
+
+## Extends
+
+- `TextFieldElement`
+
+## Inherited Interfaces
+
+- `HasValidationPropertiesElement` - Validation state and error messages
+- `HasInputFieldElement` - Value, label, helper text, and styling
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasClearButtonElement` - Clear button functionality
+- `HasPlaceholderElement` - Placeholder text
+- `HasAllowedCharPatternElement` - Character input restrictions
+- `HasThemeElement` - Theme variants
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-email-field>` element
+</ParamField>
+
+```java
+public EmailFieldElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel (Page)
+
+Get an email field by its accessible label. Uses ARIA role `textbox`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the email field
+</ParamField>
+
+```java
+public static EmailFieldElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+EmailFieldElement emailField = EmailFieldElement.getByLabel(page, "Email");
+emailField.setValue("user@example.com");
+emailField.assertValid();
+```
+
+### getByLabel (Locator)
+
+Get an email field by its accessible label within a scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the email field
+</ParamField>
+
+```java
+public static EmailFieldElement getByLabel(Locator locator, String label)
+```
+
+## Inherited Methods
+
+From `TextFieldElement`:
+- `getMinLength()` - Get minimum length
+- `setMinLength(int min)` - Set minimum length
+- `assertMinLength(Integer min)` - Assert minimum length
+- `getMaxLength()` - Get maximum length
+- `setMaxLength(int max)` - Set maximum length
+- `assertMaxLength(Integer max)` - Assert maximum length
+- `getPattern()` - Get validation pattern
+- `setPattern(String pattern)` - Set validation pattern
+- `assertPattern(String pattern)` - Assert validation pattern
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert field is valid
+- `assertInvalid()` - Assert field is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `HasClearButtonElement`:
+- `clickClearButton()` - Click the clear button
+- `isClearButtonVisible()` - Check if clear button is visible
+- `assertClearButtonVisible()` - Assert clear button is visible
+- `assertClearButtonNotVisible()` - Assert clear button is not visible
+
+From `HasPlaceholderElement`:
+- `getPlaceholder()` - Get placeholder text
+- `setPlaceholder(String placeholder)` - Set placeholder text
+- `assertPlaceholder(String placeholder)` - Assert placeholder matches
+
+From `FocusableElement`:
+- `focus()` - Focus the field
+- `blur()` - Blur the field
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert field has focus
+- `assertIsNotFocused()` - Assert field does not have focus
+
+From `HasLabelElement`:
+- `getLabel()` - Get label text
+- `assertLabel(String label)` - Assert label text
+- `getLabelLocator()` - Get label locator
+
+From `HasHelperElement`:
+- `getHelperText()` - Get helper text
+- `assertHelperHasText(String text)` - Assert helper text
+- `getHelperLocator()` - Get helper locator
+
+## Complete Example
+
+```java
+@Test
+public void testEmailFieldValidation() {
+    // Find email field by label
+    EmailFieldElement emailField = EmailFieldElement.getByLabel(page, "Validated Email");
+    emailField.assertVisible();
+    emailField.assertHelperHasText("This field is required.");
+    
+    // Test invalid email
+    emailField.setValue("not-an-email");
+    emailField.assertInvalid();
+    emailField.assertErrorMessage("Please enter a valid email address");
+    
+    // Test valid email
+    emailField.setValue("valid@email.com");
+    emailField.assertValid();
+    emailField.assertValue("valid@email.com");
+}
+
+@Test
+public void testEmailFieldInteractions() {
+    EmailFieldElement emailField = EmailFieldElement.getByLabel(page, "Email");
+    emailField.assertVisible();
+    
+    // Check placeholder and prefix
+    emailField.assertPlaceholder("your@email.com");
+    emailField.assertPrefixHasText("@");
+    
+    // Test clear button
+    emailField.assertClearButtonNotVisible();
+    emailField.setValue("test@vaadin.com");
+    emailField.assertClearButtonVisible();
+    emailField.clickClearButton();
+    emailField.assertValue("");
+}
+```

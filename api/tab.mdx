@@ -1,0 +1,159 @@
+---
+title: TabElement
+description: Playwright element wrapper for Vaadin Tab component
+---
+
+# TabElement
+
+Playwright element wrapper for `<vaadin-tab>` within a TabSheet or Tabs component.
+
+## Component Tag
+
+`vaadin-tab`
+
+## Related Tags
+
+- `vaadin-tabs` - Parent tabs container
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-tab>` element
+</ParamField>
+
+## Static Factory Methods
+
+### getTabByText
+
+Get a tab by visible text within a scope.
+
+```java
+TabElement.getTabByText(Locator locator, String summary)
+```
+
+<ParamField path="locator" type="Locator">
+  Scope to search within (typically tabsheet or tabs element)
+</ParamField>
+
+<ParamField path="summary" type="String">
+  Tab text content
+</ParamField>
+
+### getSelectedTab
+
+Get the currently selected tab within a scope.
+
+```java
+TabElement.getSelectedTab(Locator locator)
+```
+
+<ParamField path="locator" type="Locator">
+  Scope to search within (typically tabsheet or tabs element)
+</ParamField>
+
+## Methods
+
+### isSelected
+
+Whether the tab is currently selected.
+
+```java
+boolean isSelected()
+```
+
+### select
+
+Select the tab by clicking it.
+
+```java
+void select()
+```
+
+### getLabel
+
+Get the tab label text.
+
+```java
+String getLabel()
+```
+
+## Assertion Methods
+
+### assertSelected
+
+Assert that the tab is selected.
+
+```java
+void assertSelected()
+```
+
+### assertNotSelected
+
+Assert that the tab is not selected.
+
+```java
+void assertNotSelected()
+```
+
+## Usage Examples
+
+### Basic Tab Selection
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+
+TabElement tab = tabSheet.getTab("Details");
+tab.assertNotSelected();
+tab.select();
+tab.assertSelected();
+```
+
+### Check Tab Label
+
+```java
+TabElement tab = tabSheet.getTab("Settings");
+String label = tab.getLabel();
+assertEquals("Settings", label);
+```
+
+### Verify Selected Tab
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+TabElement selectedTab = tabSheet.getSelectedTab();
+
+if (selectedTab.isSelected()) {
+    String label = selectedTab.getLabel();
+    System.out.println("Currently viewing: " + label);
+}
+```
+
+### Switch Between Tabs
+
+```java
+TabSheetElement tabSheet = TabSheetElement.get(page);
+
+TabElement overview = tabSheet.getTab("Overview");
+TabElement details = tabSheet.getTab("Details");
+
+overview.assertSelected();
+details.assertNotSelected();
+
+details.select();
+overview.assertNotSelected();
+details.assertSelected();
+```
+
+### Use Static Factory Methods
+
+```java
+Locator tabsLocator = page.locator("vaadin-tabsheet").first();
+
+// Get by text
+TabElement tab = TabElement.getTabByText(tabsLocator, "Settings");
+tab.select();
+
+// Get selected
+TabElement selected = TabElement.getSelectedTab(tabsLocator);
+assertEquals("Settings", selected.getLabel());
+```

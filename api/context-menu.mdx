@@ -1,0 +1,153 @@
+---
+title: ContextMenuElement
+description: Playwright element wrapper for Vaadin ContextMenu component testing
+---
+
+## Overview
+
+`ContextMenuElement` is a Playwright wrapper for context menu overlays `<vaadin-context-menu-overlay>`. It provides helpers to open a menu via a context-click on the target, inspect the overlay list box, and pick menu items by their accessible label.
+
+**Component tag:** `vaadin-context-menu`
+
+**Implements:**
+- `HasStyleElement`
+
+## Constructors
+
+### ContextMenuElement(Page page)
+
+Create a `ContextMenuElement` from the page overlay by locating the first opened context menu.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+### ContextMenuElement(Locator locator)
+
+Create a `ContextMenuElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the context menu element
+</ParamField>
+
+## Static Methods
+
+### openOn(Locator target)
+
+Open the context menu by invoking a context-click (right-click) on the provided target element.
+
+<ParamField path="target" type="Locator" required>
+  The element that triggers the context menu
+</ParamField>
+
+## Instance Methods
+
+### assertOpen()
+
+Assert that the context menu overlay is open.
+
+**Verifies:** The element has the `opened` attribute.
+
+### assertClosed()
+
+Assert that the context menu overlay is closed or hidden.
+
+**Verifies:** The element is hidden in the DOM.
+
+### openSubMenu(String itemLabel)
+
+Open a submenu and return its overlay.
+
+<ParamField path="itemLabel" type="String" required>
+  The visible label of the parent menu item
+</ParamField>
+
+**Returns:** `ContextMenuElement` - The submenu overlay element
+
+### selectItem(String itemLabel)
+
+Select a menu item by its accessible name.
+
+<ParamField path="itemLabel" type="String" required>
+  The visible label of the menu item to select
+</ParamField>
+
+### assertItemDisabled(String itemLabel)
+
+Assert that a menu item is disabled.
+
+<ParamField path="itemLabel" type="String" required>
+  The visible label of the menu item
+</ParamField>
+
+### assertItemEnabled(String itemLabel)
+
+Assert that a menu item is enabled.
+
+<ParamField path="itemLabel" type="String" required>
+  The visible label of the menu item
+</ParamField>
+
+### assertItemChecked(String itemLabel)
+
+Assert that a checkable menu item is checked.
+
+<ParamField path="itemLabel" type="String" required>
+  The visible label of the menu item
+</ParamField>
+
+**Verifies:** The item has the `menu-item-checked` attribute.
+
+### assertItemNotChecked(String itemLabel)
+
+Assert that a checkable menu item is not checked.
+
+<ParamField path="itemLabel" type="String" required>
+  The visible label of the menu item
+</ParamField>
+
+### getListBoxLocator()
+
+Get the locator for the context menu list box.
+
+**Returns:** `Locator` - Locator for `<vaadin-context-menu-list-box>`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ContextMenuElement;
+
+// Open context menu on a target element
+ContextMenuElement contextMenu = new ContextMenuElement(page);
+ContextMenuElement.openOn(page.locator("#file-target"));
+contextMenu.assertOpen();
+
+// Select a menu item
+contextMenu.selectItem("Rename");
+contextMenu.assertClosed();
+
+// Check item states
+ContextMenuElement.openOn(page.locator("#status-target"));
+contextMenu.assertItemDisabled("Disabled action");
+contextMenu.assertItemEnabled("Refresh");
+
+// Work with checkable items
+ContextMenuElement.openOn(page.locator("#checkable-target"));
+contextMenu.assertItemChecked("Project news");
+contextMenu.assertItemNotChecked("Security alerts");
+contextMenu.selectItem("Security alerts");
+
+// Open and select from submenu
+ContextMenuElement.openOn(page.locator("#file-target"));
+ContextMenuElement shareMenu = contextMenu.openSubMenu("Share");
+shareMenu.selectItem("Copy link");
+
+// Verify CSS class
+contextMenu.assertCssClass("file-context-menu");
+```
+
+## Notes
+
+- The context menu uses ARIA role `menuitem` for item lookups
+- Checkable items use the `menu-item-checked` attribute to indicate state
+- Submenus are nested `<vaadin-context-menu>` elements with `slot="submenu"`

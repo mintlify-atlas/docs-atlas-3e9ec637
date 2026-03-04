@@ -1,0 +1,264 @@
+---
+title: NumberFieldElement
+description: Playwright element wrapper for Vaadin number fields
+---
+
+## Overview
+
+The `NumberFieldElement` class is a Playwright wrapper for the `<vaadin-number-field>` component. It provides methods to interact with numeric input fields, including min/max/step constraints and step controls.
+
+## Component Tag
+
+`<vaadin-number-field>`
+
+## Extends
+
+- `AbstractNumberFieldElement`
+
+## Inherited Interfaces
+
+- `HasValidationPropertiesElement` - Validation state and error messages
+- `HasInputFieldElement` - Value, label, helper text, and styling
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasClearButtonElement` - Clear button functionality
+- `HasPlaceholderElement` - Placeholder text
+- `HasAllowedCharPatternElement` - Character input restrictions
+- `HasThemeElement` - Theme variants
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-number-field>` element
+</ParamField>
+
+```java
+public NumberFieldElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel (Page)
+
+Get a number field by its accessible label. Uses ARIA role `spinbutton`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the number field
+</ParamField>
+
+```java
+public static NumberFieldElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+NumberFieldElement numberField = NumberFieldElement.getByLabel(page, "Weight");
+numberField.setValue("12.3");
+numberField.assertValue("12.3");
+```
+
+### getByLabel (Locator)
+
+Get a number field by its accessible label within a scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the number field
+</ParamField>
+
+```java
+public static NumberFieldElement getByLabel(Locator locator, String label)
+```
+
+## Methods
+
+### getStep
+
+Get the current step value.
+
+```java
+public Double getStep()
+```
+
+**Returns:** The step as a `Double`, or `null` if not set
+
+### setStep
+
+Set the step value.
+
+<ParamField path="step" type="double" required>
+  The step to apply
+</ParamField>
+
+```java
+public void setStep(double step)
+```
+
+### assertStep
+
+Assert the step attribute matches the expected value.
+
+<ParamField path="step" type="Double">
+  The expected step, or `null` to assert no explicit step is set
+</ParamField>
+
+```java
+public void assertStep(Double step)
+```
+
+### getMin
+
+Get the current minimum value.
+
+```java
+public Double getMin()
+```
+
+**Returns:** The minimum as a `Double`, or `null` if not set
+
+### setMin
+
+Set the minimum value.
+
+<ParamField path="min" type="double" required>
+  The minimum to apply
+</ParamField>
+
+```java
+public void setMin(double min)
+```
+
+### assertMin
+
+Assert the min attribute matches the expected value.
+
+<ParamField path="min" type="Double">
+  The expected minimum, or `null` to assert no explicit minimum is set
+</ParamField>
+
+```java
+public void assertMin(Double min)
+```
+
+### getMax
+
+Get the current maximum value.
+
+```java
+public Double getMax()
+```
+
+**Returns:** The maximum as a `Double`, or `null` if not set
+
+### setMax
+
+Set the maximum value.
+
+<ParamField path="max" type="double" required>
+  The maximum to apply
+</ParamField>
+
+```java
+public void setMax(double max)
+```
+
+### assertMax
+
+Assert the max attribute matches the expected value.
+
+<ParamField path="max" type="Double">
+  The expected maximum, or `null` to assert no explicit maximum is set
+</ParamField>
+
+```java
+public void assertMax(Double max)
+```
+
+## Inherited Methods
+
+From `AbstractNumberFieldElement`:
+- `getHasControls()` - Check if step controls are visible
+- `assertHasControls(boolean hasControls)` - Assert step controls visibility
+- `clickIncreaseButton()` - Click the increase button
+- `clickDecreaseButton()` - Click the decrease button
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert field is valid
+- `assertInvalid()` - Assert field is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `FocusableElement`:
+- `focus()` - Focus the field
+- `blur()` - Blur the field
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert field has focus
+- `assertIsNotFocused()` - Assert field does not have focus
+
+## Complete Example
+
+```java
+@Test
+public void testNumberFieldMinMaxStep() {
+    // Find number field by label
+    NumberFieldElement numberField = NumberFieldElement.getByLabel(page, "Measurement");
+    numberField.assertVisible();
+    
+    // Check constraints
+    numberField.assertMin(0.5);
+    numberField.assertMax(10.0);
+    numberField.assertStep(0.5);
+    
+    // Check initial value
+    numberField.assertValue("1.5");
+    
+    // Test valid value
+    numberField.setValue("5.5");
+    numberField.assertValue("5.5");
+    numberField.assertValid();
+    
+    // Test out of bounds value
+    numberField.setValue("11.5");
+    numberField.assertInvalid();
+    
+    // Test minimum violation
+    numberField.setValue("0");
+    numberField.assertInvalid();
+}
+
+@Test
+public void testNumberFieldStepControls() {
+    NumberFieldElement numberField = NumberFieldElement.getByLabel(page, "With Controls");
+    numberField.assertVisible();
+    numberField.assertHasControls(true);
+    
+    // Test increment
+    numberField.assertValue("");
+    numberField.clickIncreaseButton();
+    numberField.assertValue("0.1");
+    numberField.clickIncreaseButton();
+    numberField.assertValue("0.2");
+    
+    // Test decrement
+    numberField.clickDecreaseButton();
+    numberField.assertValue("0.1");
+}
+```

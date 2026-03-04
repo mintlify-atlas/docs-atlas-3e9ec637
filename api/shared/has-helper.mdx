@@ -1,0 +1,315 @@
+---
+title: HasHelperElement
+description: Mixin interface for components that provide helper text via the helper slot
+---
+
+## Overview
+
+`HasHelperElement` provides methods for interacting with helper text in Vaadin components. Helper text appears below form fields to provide additional guidance, explanations, or examples to users. It is persistent (unlike tooltips) and complements field labels.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasHelperElement`
+
+## Methods
+
+### getHelperLocator()
+
+```java
+default Locator getHelperLocator()
+```
+
+Returns a locator for the helper slot content element. The helper text is rendered in an element with `slot="helper"`.
+
+**Returns:** `Locator` - Locator for the first element with `slot="helper"`
+
+---
+
+### getHelperText()
+
+```java
+default String getHelperText()
+```
+
+Retrieves the text content of the helper slot.
+
+**Returns:** `String` - The helper text
+
+---
+
+### assertHelperHasText()
+
+```java
+default void assertHelperHasText(String helperText)
+```
+
+Asserts that the helper text matches the expected value.
+
+<ParamField path="helperText" type="String" required>
+  The expected helper text
+</ParamField>
+
+**Throws:** `AssertionError` if the helper text does not match
+
+## Implementing Classes
+
+The following element classes implement `HasHelperElement`:
+
+- All text input components (via `HasInputFieldElement`)
+- `RadioButtonGroupElement`
+- All components that support the helper slot
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import org.vaadin.addons.dramafinder.element.PasswordFieldElement;
+import com.microsoft.playwright.Page;
+
+public class HelperTest {
+    void testHelperText(Page page) {
+        TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+        PasswordFieldElement password = PasswordFieldElement.getByLabel(page, "Password");
+        
+        // Assert helper text provides guidance
+        username.assertHelperHasText("Choose a unique username between 3-20 characters");
+        password.assertHelperHasText("Must be at least 8 characters with 1 number and 1 special character");
+        
+        // Get helper text programmatically
+        String helpText = username.getHelperText();
+        System.out.println("Username help: " + helpText);
+        
+        // Get locator for custom assertions
+        Locator helperLocator = password.getHelperLocator();
+        assertThat(helperLocator).isVisible();
+    }
+}
+```
+
+## Implementation Details
+
+### Slot-Based Architecture
+
+Vaadin components use slots for extensible content areas. Helper text is placed in the `helper` slot:
+
+```java
+getLocator().locator("*[slot=\"helper\"]").first()
+```
+
+This selector finds the first element within the component that has `slot="helper"` attribute.
+
+### Helper Text Placement
+
+Helper text typically appears:
+- Below the input field
+- Above any error messages
+- In a smaller, muted font
+- Persistently visible (not on hover/focus like tooltips)
+
+### Difference from Error Messages
+
+Helper text is distinct from error messages:
+- **Helper text**: Proactive guidance (always visible when set)
+- **Error messages**: Reactive feedback (shown when invalid)
+
+Both use slots but different ones (`helper` vs `error-message`).
+
+## Testing Patterns
+
+### Test Guidance Text
+
+```java
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+email.assertHelperHasText("We'll never share your email with anyone");
+
+TextFieldElement phone = TextFieldElement.getByLabel(page, "Phone");
+phone.assertHelperHasText("Include country code for international numbers");
+```
+
+### Test Format Examples
+
+```java
+TextFieldElement date = TextFieldElement.getByLabel(page, "Birth Date");
+date.assertHelperHasText("Format: MM/DD/YYYY");
+
+TextFieldElement ssn = TextFieldElement.getByLabel(page, "SSN");
+ssn.assertHelperHasText("Format: XXX-XX-XXXX");
+```
+
+### Test Character Count
+
+```java
+TextAreaElement bio = TextAreaElement.getByLabel(page, "Bio");
+
+// Initial helper
+bio.assertHelperHasText("0 / 500 characters");
+
+// After typing
+bio.setValue("Hello world");
+bio.assertHelperHasText("11 / 500 characters");
+```
+
+### Test Field Requirements
+
+```java
+PasswordFieldElement password = PasswordFieldElement.getByLabel(page, "New Password");
+password.assertHelperHasText("Must contain: 8+ characters, 1 uppercase, 1 number, 1 special character");
+```
+
+### Test Dynamic Helper Changes
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Amount");
+
+// Initial helper
+field.assertHelperHasText("Enter amount in USD");
+
+// Change currency
+SelectElement currency = SelectElement.getByLabel(page, "Currency");
+currency.selectByText("EUR");
+
+// Helper updates
+field.assertHelperHasText("Enter amount in EUR");
+```
+
+## Best Practices
+
+### Use Helper Text for Additional Context
+
+Helper text should provide useful information without repeating the label:
+
+```java
+// Good: Adds useful context
+field.assertLabel("Password");
+field.assertHelperHasText("At least 8 characters");
+
+// Bad: Repeats label
+// field.assertLabel("Password");
+// field.assertHelperHasText("Enter your password");
+```
+
+### Keep Helper Text Concise
+
+Helper text should be brief and scannable:
+
+```java
+// Good: Brief and clear
+field.assertHelperHasText("3-20 characters, letters and numbers only");
+
+// Too verbose:
+// field.assertHelperHasText("Please enter a username that is between 3 and 20 characters long and contains only letters and numbers without any special characters or spaces");
+```
+
+### Use for Proactive Guidance
+
+Helper text is for guidance before errors occur:
+
+```java
+// Helper: Proactive
+field.assertHelperHasText("Must include @ symbol");
+
+// Error: Reactive (shown after validation fails)
+field.assertErrorMessage("Please enter a valid email address");
+```
+
+### Test Helper Text Visibility
+
+Verify helper text is visible when expected:
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "API Key");
+
+// Helper should be visible
+Locator helper = field.getHelperLocator();
+assertThat(helper).isVisible();
+assertThat(helper).hasText("Found in your account settings");
+```
+
+## Common Use Cases
+
+### Password Requirements
+
+```java
+PasswordFieldElement password = PasswordFieldElement.getByLabel(page, "Password");
+password.assertHelperHasText("Minimum 8 characters with at least 1 number");
+```
+
+### Optional Field Indication
+
+```java
+TextFieldElement middle = TextFieldElement.getByLabel(page, "Middle Name");
+middle.assertHelperHasText("Optional");
+```
+
+### Format Instructions
+
+```java
+TextFieldElement phone = TextFieldElement.getByLabel(page, "Phone");
+phone.assertHelperHasText("Format: (555) 555-5555");
+```
+
+### Privacy Assurances
+
+```java
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+email.assertHelperHasText("We will never share your email address");
+```
+
+### Character Limits
+
+```java
+TextAreaElement comment = TextAreaElement.getByLabel(page, "Comment");
+comment.assertHelperHasText("Maximum 500 characters");
+```
+
+### Dynamic Feedback
+
+```java
+TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+
+// Before typing
+username.assertHelperHasText("Choose a unique username");
+
+// After typing
+username.setValue("john123");
+username.blur();
+
+// May show availability
+username.assertHelperHasText("Username is available");
+```
+
+## Accessibility Considerations
+
+### Helper Text and Screen Readers
+
+Helper text should be associated with the field for screen readers. Vaadin handles this automatically through the helper slot mechanism.
+
+### Don't Use for Critical Errors
+
+Critical validation errors should use error messages, not helper text:
+
+```java
+// Correct: Use error message for validation failures
+field.setValue("invalid");
+field.blur();
+field.assertInvalid();
+field.assertErrorMessage("This field is required");
+
+// Don't rely solely on helper text for validation feedback
+```
+
+### Supplement, Don't Replace Labels
+
+Helper text supplements labels but doesn't replace them:
+
+```java
+// Both label and helper provide value
+field.assertLabel("Email Address");
+field.assertHelperHasText("We'll send a confirmation to this address");
+```
+
+## Related Interfaces
+
+- [HasLabelElement](/api/shared/has-label) - Main field label
+- [HasValidationPropertiesElement](/api/shared/has-validation-properties) - Error messages for validation failures
+- [HasPlaceholderElement](/api/shared/has-placeholder) - Placeholder text within the input
+- [HasTooltipElement](/api/shared/has-tooltip) - Hover/focus tooltips for additional context
+- [HasInputFieldElement](/api/shared/has-input-field) - Composite interface that includes helper support

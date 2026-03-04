@@ -1,0 +1,149 @@
+---
+title: SideNavigationElement
+description: Playwright element wrapper for Vaadin SideNav component testing
+---
+
+## Overview
+
+`SideNavigationElement` is a Playwright wrapper for the `<vaadin-side-nav>` component. It provides utilities to manage collapsible navigation menus and access navigation items.
+
+**Component tag:** `vaadin-side-nav`
+
+**Implements:**
+- `HasLabelElement`
+
+## Constructors
+
+### SideNavigationElement(Locator locator)
+
+Create a `SideNavigationElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the side navigation element
+</ParamField>
+
+## Methods
+
+### isCollapsed()
+
+Check if the side nav is collapsed.
+
+**Returns:** `boolean` - True if the side navigation is collapsed
+
+### assertCollapsed()
+
+Assert that the side nav is collapsed.
+
+**Verifies:** The element has the `collapsed` attribute.
+
+### assertExpanded()
+
+Assert that the side nav is expanded.
+
+**Verifies:** The element does not have the `collapsed` attribute.
+
+### assertCollapsible()
+
+Assert that the side nav is collapsible.
+
+**Verifies:** The element has the `collapsible` attribute.
+
+### assertNotCollapsible()
+
+Assert that the side nav is not collapsible.
+
+**Verifies:** The element does not have the `collapsible` attribute.
+
+### getItem(String label)
+
+Get a `SideNavigationItemElement` by its label text. This searches for a direct or nested `vaadin-side-nav-item` with the given text.
+
+<ParamField path="label" type="String" required>
+  The label text of the navigation item
+</ParamField>
+
+**Returns:** `SideNavigationItemElement` - The navigation item with the specified label
+
+**Note:** The navigation item must be visible. You may need to expand parent items first.
+
+### clickItem(String label)
+
+Click a navigation item by its label.
+
+<ParamField path="label" type="String" required>
+  The label text of the navigation item to click
+</ParamField>
+
+### toggle()
+
+Toggle the expansion state of the side navigation. Clicks the label slot to collapse/expand.
+
+### getLabelLocator()
+
+Get the locator for the side navigation label slot.
+
+**Returns:** `Locator` - Locator for the `[slot='label']` element
+
+## Static Factory Methods
+
+### getByLabel(Page page, String label)
+
+Get the `SideNavigationElement` by its accessible label.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the side navigation (uses ARIA role NAVIGATION)
+</ParamField>
+
+**Returns:** `SideNavigationElement` - The side navigation with the specified label
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.SideNavigationElement;
+import org.vaadin.addons.dramafinder.element.SideNavigationItemElement;
+
+// Get side navigation by label
+SideNavigationElement nav = SideNavigationElement.getByLabel(page, "My App");
+nav.assertVisible();
+
+// Check collapsible state
+nav.assertCollapsible();
+nav.assertExpanded();
+
+// Toggle collapse state
+nav.toggle();
+nav.assertCollapsed();
+nav.toggle();
+nav.assertExpanded();
+
+// Get and verify label
+assertEquals("My App", nav.getLabel());
+
+// Access navigation items
+SideNavigationItemElement dashboard = nav.getItem("Dashboard");
+dashboard.assertVisible();
+dashboard.assertEnabled();
+assertEquals("Dashboard", dashboard.getLabel());
+
+// Work with nested items
+SideNavigationItemElement admin = nav.getItem("Admin");
+if (!admin.isExpanded()) {
+    admin.toggle();
+}
+admin.assertExpanded();
+
+// Access child items after expanding parent
+SideNavigationItemElement users = nav.getItem("Users");
+users.assertVisible();
+
+// Click to navigate
+nav.clickItem("Dashboard");
+```
+
+## Related Elements
+
+- [SideNavigationItemElement](/api/side-navigation-item) - Individual navigation items

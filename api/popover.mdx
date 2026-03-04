@@ -1,0 +1,131 @@
+---
+title: PopoverElement
+description: Playwright element wrapper for Vaadin Popover component testing
+---
+
+## Overview
+
+`PopoverElement` is a Playwright wrapper for `<vaadin-popover>`. It provides utilities to verify popover state and access popover content.
+
+**Component tag:** `vaadin-popover`
+
+**Implements:**
+- `HasThemeElement`
+- `HasStyleElement`
+- `HasAriaLabelElement`
+
+## Constructors
+
+### PopoverElement(Page page)
+
+Create a `PopoverElement` by resolving the popover with ARIA role `dialog`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+### PopoverElement(Locator locator)
+
+Create a `PopoverElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the popover element
+</ParamField>
+
+## Methods
+
+### isOpen()
+
+Check whether the popover is open (visible).
+
+**Returns:** `boolean` - True if the popover is visible
+
+### assertOpen()
+
+Assert that the popover is open.
+
+**Verifies:** The element has the `opened` attribute.
+
+### assertClosed()
+
+Assert that the popover is closed (hidden).
+
+**Verifies:** The element is hidden in the DOM.
+
+### getContentLocator()
+
+Get the locator for the popover content.
+
+**Returns:** `Locator` - The popover element itself (content is within the popover)
+
+## Static Factory Methods
+
+### getByLabel(Page page, String label)
+
+Get a popover by its accessible label.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the popover (uses ARIA role DIALOG)
+</ParamField>
+
+**Returns:** `PopoverElement` - The popover with the specified label
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.PopoverElement;
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+
+// Open a popover
+ButtonElement openButton = ButtonElement.getByText(page, "Open Popover");
+openButton.click();
+
+// Access popover by label
+PopoverElement popover = PopoverElement.getByLabel(page, "Basic Popover");
+popover.assertOpen();
+
+// Verify content
+assertThat(popover.getContentLocator()).hasText("This is a popover");
+
+// Close by clicking trigger again
+openButton.click();
+popover.assertClosed();
+
+// Popover with component content
+ButtonElement openComponentButton = ButtonElement.getByText(page, "Open component Popover");
+openComponentButton.click();
+
+PopoverElement componentPopover = PopoverElement.getByLabel(page, "Component Popover");
+componentPopover.assertOpen();
+
+// Interact with components inside popover
+ButtonElement closeButton = ButtonElement.getByText(componentPopover.getContentLocator(), "Close");
+closeButton.click();
+componentPopover.assertClosed();
+
+// Verify theme and class
+componentPopover.assertTheme("arrow");
+componentPopover.assertCssClass("component-popover");
+
+// Multiple popovers can be open simultaneously
+ButtonElement openStayOpenedButton = ButtonElement.getByText(page, "Open stay opened Popover");
+openStayOpenedButton.click();
+
+PopoverElement stayOpenedPopover = PopoverElement.getByLabel(page, "Stay opened Popover");
+stayOpenedPopover.assertOpen();
+
+openComponentButton.click();
+componentPopover.assertOpen();
+stayOpenedPopover.assertOpen(); // Both open at the same time
+```
+
+## Notes
+
+- Popovers use ARIA role `dialog` for accessibility
+- Popovers are typically anchored to a target element
+- Multiple popovers can be open simultaneously depending on configuration
+- Popovers may close automatically on click outside or require explicit closure

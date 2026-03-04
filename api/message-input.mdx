@@ -1,0 +1,228 @@
+---
+title: MessageInputElement
+description: Playwright element wrapper for Vaadin MessageInput component testing
+---
+
+## Overview
+
+`MessageInputElement` is a Playwright wrapper for `<vaadin-message-input>`. It wraps the message input component which contains a text area for composing messages and a send button for submitting them.
+
+**Component tag:** `vaadin-message-input`
+
+**Implements:**
+- `FocusableElement`
+- `HasEnabledElement`
+- `HasStyleElement`
+- `HasThemeElement`
+- `HasTooltipElement`
+
+## Constructors
+
+### MessageInputElement(Locator locator)
+
+Create a new `MessageInputElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-message-input>` element
+</ParamField>
+
+## Internal Locator Methods
+
+### getTextAreaLocator()
+
+Get the locator for the internal `<vaadin-text-area>`.
+
+**Returns:** `Locator` - The text area locator
+
+### getTextAreaInputLocator()
+
+Get the locator for the native textarea inside the text area.
+
+**Returns:** `Locator` - The textarea input locator (`slot="textarea"`)
+
+### getSendButtonLocator()
+
+Get the locator for the internal send button.
+
+**Returns:** `Locator` - The send button locator (`<vaadin-message-input-button>`)
+
+## Value Methods
+
+### getValue()
+
+Get the current text area value.
+
+**Returns:** `String` - The current message text
+
+### setValue(String value)
+
+Set the message text by filling the internal textarea input.
+
+<ParamField path="value" type="String" required>
+  The message text to set
+</ParamField>
+
+### clear()
+
+Clear the text area by setting the value to an empty string.
+
+### assertValue(String value)
+
+Assert that the text area input has the expected value.
+
+<ParamField path="value" type="String" required>
+  The expected value
+</ParamField>
+
+## Action Methods
+
+### submit()
+
+Click the send button to submit the message.
+
+### submitByEnter()
+
+Press Enter on the text area to submit the message.
+
+### typeAndSubmit(String message)
+
+Set a message value and then click the send button.
+
+<ParamField path="message" type="String" required>
+  The message to type and submit
+</ParamField>
+
+## Send Button Assertion Methods
+
+### assertSendButtonVisible()
+
+Assert that the send button is visible.
+
+### assertSendButtonHidden()
+
+Assert that the send button is hidden.
+
+### assertSendButtonEnabled()
+
+Assert that the send button is enabled.
+
+### assertSendButtonDisabled()
+
+Assert that the send button is disabled.
+
+## I18n Methods
+
+### getMessagePlaceholder()
+
+Get the placeholder text on the text area.
+
+**Returns:** `String` - The placeholder text
+
+### assertMessagePlaceholder(String expected)
+
+Assert that the text area placeholder matches the expected text.
+
+<ParamField path="expected" type="String" required>
+  The expected placeholder text
+</ParamField>
+
+### getSendButtonText()
+
+Get the send button text content.
+
+**Returns:** `String` - The send button text
+
+### assertSendButtonText(String expected)
+
+Assert that the send button text matches the expected text.
+
+<ParamField path="expected" type="String" required>
+  The expected send button text
+</ParamField>
+
+## Static Factory Methods
+
+### get(Page page)
+
+Get the first `<vaadin-message-input>` on the page.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+**Returns:** `MessageInputElement` - The first message input on the page
+
+### get(Locator locator)
+
+Get the first `<vaadin-message-input>` within a locator scope.
+
+<ParamField path="locator" type="Locator" required>
+  The scope to search within
+</ParamField>
+
+**Returns:** `MessageInputElement` - The first message input within the scope
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.MessageInputElement;
+
+// Get message input by ID
+MessageInputElement messageInput = new MessageInputElement(
+    page.locator("#basic-message-input"));
+
+// Set and verify value
+messageInput.setValue("Hello World");
+messageInput.assertValue("Hello World");
+assertEquals("Hello World", messageInput.getValue());
+
+// Submit by clicking button
+messageInput.typeAndSubmit("Test message");
+assertThat(page.locator("#submit-output")).hasText("Test message");
+
+// Submit by pressing Enter
+messageInput.setValue("Enter message");
+messageInput.submitByEnter();
+assertThat(page.locator("#submit-output")).hasText("Enter message");
+
+// Clear the input
+messageInput.setValue("Some text");
+messageInput.clear();
+messageInput.assertValue("");
+
+// Verify enabled/disabled state
+messageInput.assertEnabled();
+
+MessageInputElement disabledInput = new MessageInputElement(
+    page.locator("#disabled-message-input"));
+disabledInput.assertDisabled();
+
+// Verify custom I18n
+MessageInputElement i18nInput = new MessageInputElement(
+    page.locator("#i18n-message-input"));
+i18nInput.assertMessagePlaceholder("Type your message here...");
+i18nInput.assertSendButtonText("Submit");
+
+String placeholder = i18nInput.getMessagePlaceholder();
+String buttonText = i18nInput.getSendButtonText();
+
+// Verify send button states
+messageInput.assertSendButtonVisible();
+messageInput.assertSendButtonEnabled();
+
+// Value is typically cleared after submit
+messageInput.typeAndSubmit("Will be cleared");
+messageInput.assertValue("");
+```
+
+## Notes
+
+- The component syncs value between the native textarea and the Vaadin text area
+- The send button state is typically controlled by whether the input has content
+- Values are usually cleared automatically after successful submission
+- The component supports custom I18n for placeholder and button text
+- Focus operations target the internal textarea input
+
+## Related Elements
+
+- [MessageListElement](/api/message-list) - Display list of messages

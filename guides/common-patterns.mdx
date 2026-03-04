@@ -1,0 +1,689 @@
+---
+title: Common Testing Patterns
+description: Real-world testing scenarios and patterns for Drama Finder
+---
+
+## Overview
+
+This guide presents common testing patterns extracted from real Drama Finder tests. Each pattern includes working examples from the test suite.
+
+## Form Testing Patterns
+
+### Basic Form Validation
+
+Test form validation by checking required fields, format validation, and error messages:
+
+```java
+@Test
+public void testRequiredFieldValidation() {
+    TextFieldElement nameField = TextFieldElement.getByLabel(page, "Full Name");
+    ButtonElement submitButton = ButtonElement.getByText(page, "Submit");
+    
+    // Initially valid (untouched)
+    nameField.assertValid();
+    
+    // Focus and blur without entering value
+    nameField.focus();
+    submitButton.focus(); // Blur name field
+    
+    // Should show validation error
+    nameField.assertInvalid();
+    nameField.assertErrorMessage("Name is required");
+    
+    // Enter valid value
+    nameField.setValue("John Doe");
+    nameField.assertValid();
+}
+```
+
+### Form with Multiple Validation Rules
+
+Test complex validation with min/max length, patterns, and custom validators:
+
+```java
+@Test
+public void testPasswordFieldValidation() {
+    TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+    
+    // Test min length
+    password.assertMinLength(8);
+    password.setValue("short");
+    password.assertInvalid();
+    password.assertErrorMessage("Password must be at least 8 characters");
+    
+    // Test pattern matching (must contain number)
+    password.setValue("longpassword");
+    password.assertInvalid();
+    password.assertErrorMessage("Password must contain at least one number");
+    
+    // Valid password
+    password.setValue("SecurePass123");
+    password.assertValid();
+}
+```
+
+### Testing Field Components
+
+Test helper text, prefix, suffix, and other field decorations:
+
+```java
+@Test
+public void testFieldComponents() {
+    TextFieldElement priceField = TextFieldElement.getByLabel(page, "Price");
+    
+    // Helper text
+    priceField.assertHelperHasText("Enter price in USD");
+    assertEquals("Enter price in USD", priceField.getHelperText());
+    
+    // Prefix
+    assertThat(priceField.getPrefixLocator()).hasText("$");
+    priceField.assertPrefixHasText("$");
+    assertEquals("$", priceField.getPrefixText());
+    
+    // Suffix
+    assertThat(priceField.getSuffixLocator()).hasText("USD");
+    priceField.assertSuffixHasText("USD");
+}
+```
+
+### Testing Helper Components
+
+Some fields accept components as helpers:
+
+```java
+@Test
+public void testHelperComponent() {
+    ComboBoxElement field = ComboBoxElement.getByLabel(page, "Country");
+    
+    // Helper contains another ComboBox for currency
+    ComboBoxElement currencyHelper = new ComboBoxElement(field.getHelperLocator());
+    currencyHelper.assertVisible();
+    currencyHelper.assertHelperHasText("Select currency");
+    currencyHelper.selectItem("USD");
+}
+```
+
+## Selection Component Patterns
+
+### ComboBox Testing
+
+#### Basic Selection
+
+```java
+@Test
+public void testComboBoxSelection() {
+    ComboBoxElement sortBy = ComboBoxElement.getByLabel(page, "Sort by");
+    sortBy.assertVisible();
+    
+    // Initially no selection
+    sortBy.assertValue("");
+    
+    // Select item
+    sortBy.selectItem("Rating: high to low");
+    sortBy.assertValue("Rating: high to low");
+    assertEquals("Rating: high to low", sortBy.getValue());
+}
+```
+
+#### Filter and Select
+
+```java
+@Test
+public void testComboBoxFiltering() {
+    ComboBoxElement fruits = ComboBoxElement.getByLabel(page, "Fruit");
+    
+    // Filter to narrow results
+    fruits.filterAndSelectItem("Apr", "Apricot");
+    fruits.assertValue("Apricot");
+}
+```
+
+#### Lazy Loading ComboBox
+
+```java
+@Test
+public void testLazyComboBox() {
+    ComboBoxElement lazyBox = ComboBoxElement.getByLabel(page, "Lazy Items");
+    
+    // Filter for specific item beyond initial load
+    lazyBox.filterAndSelectItem("Item 250", "Item 250");
+    lazyBox.assertValue("Item 250");
+    
+    // Test filter narrowing
+    lazyBox.setFilter("Item 49");
+    lazyBox.assertItemCount(11); // Item 49, Item 490-499
+    lazyBox.close();
+}
+```
+
+#### Custom Value Entry
+
+```java
+@Test
+public void testComboBoxCustomValue() {
+    ComboBoxElement customBox = ComboBoxElement.getByLabel(page, "Custom Entry");
+    
+    // Type custom value and press Enter
+    customBox.getInputLocator().fill("Custom entry");
+    customBox.getInputLocator().press("Enter");
+    
+    // Verify custom value was accepted
+    assertThat(page.locator("#custom-value-display")).hasText("Custom entry");
+}
+```
+
+#### Clear Button
+
+```java
+@Test
+public void testComboBoxClearButton() {
+    ComboBoxElement box = ComboBoxElement.getByLabel(page, "With Clear Button");
+    
+    // Select value
+    box.selectItem("Option 1");
+    box.assertValue("Option 1");
+    
+    // Clear selection
+    box.clickClearButton();
+    box.assertValue("");
+}
+```
+
+### DatePicker Testing
+
+```java
+@Test
+public void testDatePickerWithMinMax() {
+    DatePickerElement vacationDate = DatePickerElement.getByLabel(page, "Vacation Date");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    
+    LocalDate today = LocalDate.now();
+    LocalDate validDate = today.plusDays(15);
+    LocalDate tooLate = today.plusDays(40);
+    LocalDate tooEarly = today.minusDays(1);
+    
+    // Test valid date
+    vacationDate.setValue(validDate);
+    vacationDate.assertValue(validDate);
+    vacationDate.assertValue(formatter.format(validDate));
+    vacationDate.assertValid();
+    
+    // Test max date exceeded
+    vacationDate.setValue(tooLate);
+    vacationDate.assertInvalid();
+    vacationDate.assertErrorMessage("Maximum number of days exceeded.");
+    
+    // Test min date not met
+    vacationDate.setValue(tooEarly);
+    vacationDate.assertInvalid();
+    vacationDate.assertErrorMessage("Minimum number of days exceeded.");
+}
+```
+
+## Interactive Component Patterns
+
+### Button Testing
+
+```java
+@Test
+public void testButton() {
+    ButtonElement button = ButtonElement.getByText(page, "Click me");
+    
+    // Test initial state
+    button.assertEnabled();
+    button.assertVisible();
+    button.assertTheme("primary");
+    button.assertCssClass("custom-button");
+    
+    // Test click action
+    button.click();
+    assertThat(page.getByText("Button clicked!")).isVisible();
+}
+
+@Test
+pubic void testButtonWithTooltip() {
+    ButtonElement button = ButtonElement.getByText(page, "Help");
+    button.assertTooltipHasText("Click for help");
+}
+
+@Test
+public void testDisabledButton() {
+    ButtonElement button = ButtonElement.getByText(page, "Disabled");
+    button.assertDisabled();
+}
+```
+
+### Checkbox Testing
+
+```java
+@Test
+public void testCheckbox() {
+    CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Accept Terms");
+    
+    // Initial state
+    checkbox.assertVisible();
+    checkbox.assertNotChecked();
+    checkbox.assertEnabled();
+    
+    // Check and uncheck
+    checkbox.check();
+    checkbox.assertChecked();
+    
+    checkbox.uncheck();
+    checkbox.assertNotChecked();
+}
+
+@Test
+public void testIndeterminateCheckbox() {
+    CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Select All");
+    
+    checkbox.assertIndeterminate();
+    
+    // Clicking removes indeterminate state
+    checkbox.check();
+    checkbox.assertNotIndeterminate();
+    checkbox.assertChecked();
+}
+
+@Test
+public void testRequiredCheckbox() {
+    CheckboxElement terms = CheckboxElement.getByLabel(page, "I agree");
+    
+    // Valid when checked
+    terms.check();
+    terms.assertValid();
+    
+    // Invalid when unchecked
+    terms.uncheck();
+    terms.assertInvalid();
+    terms.assertErrorMessage("You must agree to the terms");
+}
+```
+
+### Accordion Testing
+
+```java
+@Test
+public void testAccordion() {
+    AccordionElement accordion = new AccordionElement(page.locator(".faq-accordion"));
+    accordion.assertPanelCount(4);
+    
+    // Test initially opened panel
+    AccordionPanelElement panel1 = accordion.getPanel("Question 1");
+    panel1.assertOpened();
+    panel1.assertContentVisible();
+    assertThat(panel1.getContentLocator()).hasText("Answer to question 1");
+    
+    // Open different panel (first closes)
+    accordion.openPanel("Question 2");
+    panel1.assertClosed();
+    
+    AccordionPanelElement panel2 = accordion.getPanel("Question 2");
+    panel2.assertOpened();
+    
+    // Test disabled panel
+    AccordionPanelElement disabledPanel = accordion.getPanel("Disabled");
+    disabledPanel.assertDisabled();
+    disabledPanel.assertClosed();
+    disabledPanel.getSummaryLocator().click();
+    disabledPanel.assertClosed(); // Still closed
+}
+```
+
+## State Management Patterns
+
+### Focus Management
+
+```java
+@Test
+public void testFocusManagement() {
+    TextFieldElement field1 = TextFieldElement.getByLabel(page, "First Field");
+    TextFieldElement field2 = TextFieldElement.getByLabel(page, "Second Field");
+    
+    // First field starts focused
+    assertEquals("", field1.getLocator().getAttribute("focused"));
+    field1.assertIsFocused();
+    field2.assertIsNotFocused();
+    
+    // Move focus to second field
+    field2.focus();
+    field2.assertIsFocused();
+    field1.assertIsNotFocused();
+}
+```
+
+### Enable/Disable State
+
+```java
+@Test
+public void testEnabledDisabledToggle() {
+    TextFieldElement field = TextFieldElement.getByLabel(page, "Toggle Field");
+    ButtonElement toggleButton = ButtonElement.getByText(page, "Toggle Enable");
+    
+    // Initially disabled
+    field.assertDisabled();
+    
+    // Enable field
+    toggleButton.click();
+    field.assertEnabled();
+    
+    // Disable again
+    toggleButton.click();
+    field.assertDisabled();
+}
+```
+
+### Read-Only State
+
+```java
+@Test
+public void testReadOnlyField() {
+    TextFieldElement field = TextFieldElement.getByLabel(page, "Read-only Field");
+    field.assertReadOnly();
+    field.assertValue("Cannot edit this");
+    
+    // Attempt to set value (should fail or be ignored)
+    field.setValue("New value");
+    field.assertValue("Cannot edit this"); // Value unchanged
+}
+```
+
+### Open/Close State
+
+```java
+@Test
+public void testComboBoxOpenClose() {
+    ComboBoxElement combo = ComboBoxElement.getByLabel(page, "Select Item");
+    
+    // Initially closed
+    combo.assertClosed();
+    
+    // Open
+    combo.open();
+    combo.assertOpened();
+    combo.assertItemCount(5);
+    
+    // Close
+    combo.close();
+    combo.assertClosed();
+}
+```
+
+## Accessibility Testing Patterns
+
+### ARIA Labels
+
+```java
+@Test
+public void testAriaLabel() {
+    // Button with aria-label (no visible text)
+    ButtonElement iconButton = ButtonElement.getByText(page, "Close");
+    iconButton.assertAriaLabel("Close");
+    
+    // Field with aria-label (no visible label)
+    TextFieldElement field = TextFieldElement.getByLabel(page, "Invisible Label");
+    field.assertAriaLabel("Invisible Label");
+    field.assertLabel(null); // No visible label element
+}
+```
+
+### ARIA Labelled By
+
+```java
+@Test
+public void testAriaLabelledBy() {
+    // Field labeled by external element
+    TextFieldElement field = TextFieldElement.getByLabel(page, "Labelled By External");
+    field.assertVisible();
+    field.assertAriaLabel(null); // No aria-label attribute
+    // Label comes from aria-labelledby reference
+}
+```
+
+### Theme and Styling
+
+```java
+@Test
+public void testThemeAttributes() {
+    TextFieldElement field = TextFieldElement.getByLabel(page, "Small Field");
+    field.assertTheme("small");
+    
+    ButtonElement primaryButton = ButtonElement.getByText(page, "Save");
+    primaryButton.assertTheme("primary");
+    
+    ComboBoxElement largeCombo = ComboBoxElement.getByLabel(page, "Large Combo");
+    largeCombo.assertTheme("large");
+}
+
+@Test
+public void testCssClasses() {
+    ButtonElement customButton = ButtonElement.getByText(page, "Custom");
+    customButton.assertCssClass("custom-button");
+    assertThat(customButton.getLocator()).hasClass("custom-button");
+}
+```
+
+## Grid and List Patterns
+
+### Basic Grid Testing
+
+```java
+@Test
+public void testGrid() {
+    GridElement grid = new GridElement(page.locator("vaadin-grid"));
+    
+    // Check row count
+    grid.assertRowCount(10);
+    
+    // Get cell value
+    assertEquals("John Doe", grid.getCellValue(0, "Name"));
+    assertEquals("john@example.com", grid.getCellValue(0, "Email"));
+    
+    // Test row selection
+    grid.selectRow(0);
+    grid.assertRowSelected(0);
+}
+```
+
+### Filtering Grids
+
+```java
+@Test
+public void testGridFiltering() {
+    GridElement grid = new GridElement(page.locator("vaadin-grid"));
+    TextFieldElement filterField = TextFieldElement.getByLabel(page, "Filter");
+    
+    // Initial row count
+    grid.assertRowCount(50);
+    
+    // Apply filter
+    filterField.setValue("John");
+    page.waitForTimeout(500); // Wait for debounced filter
+    
+    // Verify filtered results
+    grid.assertRowCount(3);
+}
+```
+
+## Dialog and Overlay Patterns
+
+### Dialog Testing
+
+```java
+@Test
+public void testDialog() {
+    ButtonElement openButton = ButtonElement.getByText(page, "Open Dialog");
+    openButton.click();
+    
+    DialogElement dialog = DialogElement.get(page);
+    dialog.assertOpened();
+    
+    // Interact with dialog contents
+    ButtonElement confirmButton = ButtonElement.getByText(dialog.getLocator(), "Confirm");
+    confirmButton.click();
+    
+    dialog.assertClosed();
+}
+```
+
+### Notification Testing
+
+```java
+@Test
+public void testNotification() {
+    ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+    saveButton.click();
+    
+    NotificationElement notification = NotificationElement.get(page);
+    notification.assertOpened();
+    notification.assertText("Saved successfully");
+    notification.assertTheme("success");
+    
+    // Wait for auto-close or manually close
+    notification.close();
+    notification.assertClosed();
+}
+```
+
+### Context Menu Testing
+
+```java
+@Test
+public void testContextMenu() {
+    ButtonElement menuButton = ButtonElement.getByText(page, "Menu");
+    menuButton.click();
+    
+    ContextMenuElement menu = ContextMenuElement.get(page);
+    menu.assertOpened();
+    
+    // Click menu item
+    menu.clickItem("Edit");
+    
+    assertThat(page.getByText("Editing...")).isVisible();
+}
+```
+
+## Complex Interaction Patterns
+
+### Multi-Step Form Wizard
+
+```java
+@Test
+public void testMultiStepWizard() {
+    // Step 1: Personal Info
+    TextFieldElement name = TextFieldElement.getByLabel(page, "Name");
+    name.setValue("John Doe");
+    
+    ButtonElement nextButton = ButtonElement.getByText(page, "Next");
+    nextButton.click();
+    
+    // Step 2: Address
+    TextFieldElement address = TextFieldElement.getByLabel(page, "Address");
+    address.assertVisible();
+    address.setValue("123 Main St");
+    nextButton.click();
+    
+    // Step 3: Review and Submit
+    assertThat(page.getByText("Name: John Doe")).isVisible();
+    assertThat(page.getByText("Address: 123 Main St")).isVisible();
+    
+    ButtonElement submitButton = ButtonElement.getByText(page, "Submit");
+    submitButton.click();
+    
+    assertThat(page.getByText("Form submitted successfully")).isVisible();
+}
+```
+
+### Master-Detail Pattern
+
+```java
+@Test
+public void testMasterDetail() {
+    GridElement masterGrid = new GridElement(page.locator("#master-grid"));
+    
+    // Select item in master
+    masterGrid.selectRow(0);
+    
+    // Verify detail panel appears
+    TextFieldElement detailName = TextFieldElement.getByLabel(page, "Detail Name");
+    detailName.assertVisible();
+    detailName.assertValue("John Doe");
+    
+    // Edit in detail
+    detailName.setValue("Jane Doe");
+    ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+    saveButton.click();
+    
+    // Verify master updated
+    assertEquals("Jane Doe", masterGrid.getCellValue(0, "Name"));
+}
+```
+
+### Drag and Drop (if supported)
+
+```java
+@Test
+public void testDragAndDrop() {
+    Locator sourceItem = page.locator("#item-1");
+    Locator targetZone = page.locator("#drop-zone");
+    
+    sourceItem.dragTo(targetZone);
+    
+    assertThat(targetZone.locator("#item-1")).isVisible();
+    assertThat(page.getByText("Item moved")).isVisible();
+}
+```
+
+## Testing Utilities
+
+### Custom Wait Conditions
+
+```java
+// Wait for data to load
+public void waitForDataLoaded() {
+    page.waitForFunction("() => window.dataLoaded === true");
+}
+
+// Wait for specific element count
+public void waitForItemCount(int expectedCount) {
+    page.waitForFunction(
+        "(count) => document.querySelectorAll('.item').length === count",
+        expectedCount
+    );
+}
+```
+
+### Reusable Test Helpers
+
+```java
+// Login helper
+private void login(String username, String password) {
+    TextFieldElement userField = TextFieldElement.getByLabel(page, "Username");
+    TextFieldElement passField = TextFieldElement.getByLabel(page, "Password");
+    ButtonElement loginButton = ButtonElement.getByText(page, "Login");
+    
+    userField.setValue(username);
+    passField.setValue(password);
+    loginButton.click();
+    
+    assertThat(page).hasURL("/dashboard");
+}
+
+// Fill form helper
+private void fillUserForm(String name, String email, String phone) {
+    TextFieldElement.getByLabel(page, "Name").setValue(name);
+    TextFieldElement.getByLabel(page, "Email").setValue(email);
+    TextFieldElement.getByLabel(page, "Phone").setValue(phone);
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" icon="wrench" href="/guides/troubleshooting">
+    Solutions to common testing issues
+  </Card>
+  <Card title="Best Practices" icon="lightbulb" href="/guides/best-practices">
+    Best practices for maintainable tests
+  </Card>
+</CardGroup>

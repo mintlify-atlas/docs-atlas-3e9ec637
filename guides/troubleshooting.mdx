@@ -1,0 +1,753 @@
+---
+title: Troubleshooting Common Issues
+description: Solutions to common problems when testing Vaadin applications with Drama Finder
+---
+
+## Overview
+
+This guide addresses common issues you may encounter when writing tests with Drama Finder, organized by category with practical solutions.
+
+## Locator Issues
+
+### Element Not Found
+
+<Accordion title="Problem: Element not found or null">
+**Symptoms:**
+- `Error: Element not found`
+- `PlaywrightException: Timeout 15000ms exceeded`
+- Locator returns null or empty
+
+**Common Causes:**
+
+1. **Incorrect Label or Text**
+   ```java
+   // Wrong: Typo in label
+   TextFieldElement field = TextFieldElement.getByLabel(page, "Usernme");
+   
+   // Correct: Exact label text
+   TextFieldElement field = TextFieldElement.getByLabel(page, "Username");
+   ```
+
+2. **Element Not Yet Rendered**
+   ```java
+   // Wrong: Immediate lookup after navigation
+   page.navigate("/dashboard");
+   ButtonElement button = ButtonElement.getByText(page, "Save");
+   button.click(); // May fail
+   
+   // Correct: Wait for Vaadin to be ready
+   page.navigate("/dashboard");
+   page.waitForFunction(WAIT_FOR_VAADIN_SCRIPT);
+   ButtonElement button = ButtonElement.getByText(page, "Save");
+   button.click();
+   ```
+
+3. **Shadow DOM Not Pierced**
+   ```java
+   // Wrong: XPath doesn't pierce shadow DOM
+   Locator input = getLocator().locator("xpath=//input");
+   
+   // Correct: CSS selector pierces shadow DOM
+   Locator input = getLocator().locator("input");
+   ```
+
+**Solution:**
+- Verify the exact label/text in your application
+- Ensure Vaadin Flow is ready before interactions
+- Use CSS selectors, not XPath, for shadow DOM elements
+- Check element visibility with `assertVisible()` first
+</Accordion>
+
+### Multiple Elements Matched
+
+<Accordion title="Problem: Locator matches multiple elements">
+**Symptoms:**
+- `Error: Multiple elements found`
+- Wrong element is selected
+- Ambiguous locator warning
+
+**Common Causes:**
+
+1. **Missing `.first()` Call**
+   ```java
+   // Wrong: May match multiple buttons
+   ButtonElement button = new ButtonElement(page.locator("vaadin-button"));
+   
+   // Correct: Explicitly select first match
+   ButtonElement button = new ButtonElement(
+       page.locator("vaadin-button").first()
+   );
+   ```
+
+2. **Not Using Scoped Lookup**
+   ```java
+   // Wrong: May match buttons in other dialogs
+   ButtonElement confirmButton = ButtonElement.getByText(page, "Confirm");
+   
+   // Correct: Scope to specific dialog
+   DialogElement dialog = DialogElement.get(page);
+   ButtonElement confirmButton = ButtonElement.getByText(
+       dialog.getLocator(), "Confirm"
+   );
+   ```
+
+**Solution:**
+- Always use `.first()` when creating elements from broad selectors
+- Use scoped lookups within containers
+- Use more specific factory methods (`getByLabel`, `getByText`)
+- Add unique labels or aria-labels to distinguish similar elements
+</Accordion>
+
+### Wrong Locator Type
+
+<Accordion title="Problem: Using wrong locator for operation">
+**Symptoms:**
+- `getAttribute()` returns unexpected results
+- Actions don't work (click, fill, etc.)
+- State checks fail
+
+**Common Causes:**
+
+1. **Component vs. Input Locator Confusion**
+   ```java
+   TextFieldElement field = TextFieldElement.getByLabel(page, "Email");
+   
+   // Wrong: Value is on input, not component
+   String value = field.getLocator().getAttribute("value"); // null or wrong
+   
+   // Correct: Use input locator for value
+   String value = field.getInputLocator().getAttribute("value");
+   
+   // Wrong: Disabled is on input, not component
+   String disabled = field.getLocator().getAttribute("disabled");
+   
+   // Correct: Check enabled locator
+   String disabled = field.getEnabledLocator().getAttribute("disabled");
+   ```
+
+2. **Focus Locator Mismatch**
+   ```java
+   // Wrong: Focus might be on input, not wrapper
+   field.getLocator().focus();
+   
+   // Correct: Use focus locator
+   field.getFocusLocator().focus();
+   
+   // Or use the element method
+   field.focus();
+   ```
+
+**Solution:**
+- Use `getInputLocator()` for: value, maxlength, pattern, placeholder
+- Use `getLocator()` for: theme, class, opened, component-level attributes
+- Use `getEnabledLocator()` and `getFocusLocator()` for state checks
+- Consult element documentation for which locator to use
+</Accordion>
+
+## Timing and Synchronization Issues
+
+### Flaky Tests Due to Timing
+
+<Accordion title="Problem: Tests pass sometimes and fail other times">
+**Symptoms:**
+- Tests fail intermittently
+- "Element not visible" errors
+- State assertions fail randomly
+
+**Common Causes:**
+
+1. **Not Using Auto-Retry Assertions**
+   ```java
+   // Wrong: No retry, checks immediately
+   assertTrue(button.getLocator().getAttribute("disabled") != null);
+   
+   // Correct: Auto-retries until timeout
+   button.assertDisabled();
+   // or
+   assertThat(button.getLocator()).hasAttribute("disabled", "");
+   ```
+
+2. **Hard Waits Instead of Smart Waits**
+   ```java
+   // Wrong: Fixed wait, may be too short or too long
+   button.click();
+   page.waitForTimeout(2000);
+   assertThat(page.getByText("Success")).isVisible();
+   
+   // Correct: Wait for specific condition
+   button.click();
+   assertThat(page.getByText("Success")).isVisible(); // Auto-waits
+   ```
+
+3. **Not Waiting for Vaadin Flow**
+   ```java
+   // Wrong: Navigate and immediately interact
+   page.navigate("/form");
+   TextFieldElement field = TextFieldElement.getByLabel(page, "Name");
+   field.setValue("John"); // May fail if not ready
+   
+   // Correct: Wait for Vaadin (done in setupTest())
+   // Ensure your base class waits for Vaadin after navigation
+   ```
+
+**Solution:**
+- Use Playwright assertions that auto-retry
+- Avoid `Thread.sleep()` and `page.waitForTimeout()`
+- Use element-specific assertion methods
+- Ensure `WAIT_FOR_VAADIN_SCRIPT` runs after navigation
+- Increase default timeouts if necessary
+</Accordion>
+
+### Actions Not Taking Effect
+
+<Accordion title="Problem: Click, fill, or other actions don't work">
+**Symptoms:**
+- `click()` does nothing
+- `setValue()` doesn't change value
+- Form submission fails
+
+**Common Causes:**
+
+1. **Element Not Actionable**
+   ```java
+   // Wrong: Element might be covered, disabled, or invisible
+   button.getLocator().click();
+   
+   // Correct: Check state first
+   button.assertVisible();
+   button.assertEnabled();
+   button.click();
+   ```
+
+2. **Missing Event Dispatch**
+   ```java
+   // Wrong: Programmatic change without event
+   field.getInputLocator().evaluate("el => el.value = 'test'");
+   // Vaadin doesn't detect change
+   
+   // Correct: Use fill and dispatch event
+   field.getInputLocator().fill("test");
+   field.getLocator().dispatchEvent("change");
+   
+   // Best: Use element method
+   field.setValue("test");
+   ```
+
+3. **Wrong Element Clicked**
+   ```java
+   // Wrong: Clicking wrapper instead of checkbox
+   CheckboxElement checkbox = CheckboxElement.getByLabel(page, "Agree");
+   checkbox.getLocator().click(); // Might not work
+   
+   // Correct: Use element method that targets right element
+   checkbox.check();
+   ```
+
+**Solution:**
+- Verify element is visible, enabled, and stable before actions
+- Use element-specific action methods (`setValue`, `check`, `selectItem`)
+- Dispatch events after programmatic changes
+- Check for overlays or loading indicators covering elements
+</Accordion>
+
+## Assertion Failures
+
+### Unexpected Attribute Values
+
+<Accordion title="Problem: Assertions fail with unexpected values">
+**Symptoms:**
+- Expected attribute not present
+- Attribute has different value than expected
+- `null` when expecting a value
+
+**Common Causes:**
+
+1. **Attribute vs. Property Confusion**
+   ```java
+   // Wrong: maxLength is a property, not attribute
+   String maxLen = field.getInputLocator().getAttribute("maxLength");
+   
+   // Correct: Use lowercase for attribute
+   String maxLen = field.getInputLocator().getAttribute("maxlength");
+   
+   // Or use property check
+   assertThat(field.getInputLocator()).hasJSProperty("maxLength", 10);
+   ```
+
+2. **Boolean Attributes**
+   ```java
+   // Wrong: Boolean attributes have empty string value, not "true"
+   assertThat(button.getLocator()).hasAttribute("disabled", "true");
+   
+   // Correct: Empty string indicates presence
+   assertThat(button.getLocator()).hasAttribute("disabled", "");
+   
+   // Or check for absence
+   assertThat(button.getLocator()).not().hasAttribute("disabled", "");
+   ```
+
+3. **Null Handling**
+   ```java
+   // Wrong: Doesn't handle null case
+   public void assertPrefix(String text) {
+       assertThat(getPrefixLocator()).hasText(text); // Fails if no prefix
+   }
+   
+   // Correct: Handle null properly
+   public void assertPrefix(String text) {
+       if (text != null) {
+           assertThat(getPrefixLocator()).hasText(text);
+       } else {
+           assertThat(getPrefixLocator()).not().isVisible();
+       }
+   }
+   ```
+
+**Solution:**
+- Use lowercase attribute names
+- Boolean attributes: check for empty string or absence
+- Handle null values in assertion helpers
+- Use `hasJSProperty` for DOM properties
+</Accordion>
+
+### State Check Failures
+
+<Accordion title="Problem: Element state doesn't match expectation">
+**Symptoms:**
+- `assertEnabled()` fails when element appears enabled
+- `assertChecked()` fails for checked checkbox
+- Focus assertions fail
+
+**Common Causes:**
+
+1. **Checking Wrong Element**
+   ```java
+   // Wrong: Focused attribute is on component, not input
+   TextFieldElement field = TextFieldElement.getByLabel(page, "Name");
+   assertThat(field.getInputLocator()).hasAttribute("focused", "");
+   
+   // Correct: Check component element
+   assertThat(field.getLocator()).hasAttribute("focused", "");
+   
+   // Or use helper
+   field.assertIsFocused();
+   ```
+
+2. **Invalid State Not Triggered**
+   ```java
+   // Wrong: Validation might not run yet
+   TextFieldElement field = TextFieldElement.getByLabel(page, "Email");
+   field.setValue("");
+   field.assertInvalid(); // Might fail if not validated
+   
+   // Correct: Trigger validation (e.g., blur or submit)
+   field.setValue("");
+   ButtonElement submit = ButtonElement.getByText(page, "Submit");
+   submit.click(); // Triggers validation
+   field.assertInvalid();
+   ```
+
+3. **Async State Change**
+   ```java
+   // Wrong: State might not have updated yet
+   button.click();
+   assertTrue(button.getLocator().getAttribute("disabled") != null);
+   
+   // Correct: Use auto-retry assertion
+   button.click();
+   button.assertDisabled(); // Waits for state to change
+   ```
+
+**Solution:**
+- Use correct locator for state checks (component vs. input)
+- Trigger validation before checking invalid state
+- Use assertions that auto-retry
+- Check element documentation for state location
+</Accordion>
+
+## Setup and Configuration Issues
+
+### Browser Launch Failures
+
+<Accordion title="Problem: Browser fails to launch">
+**Symptoms:**
+- `Error: Executable doesn't exist`
+- Browser crashes on startup
+- Headless mode issues
+
+**Common Causes:**
+
+1. **Playwright Browsers Not Installed**
+   ```bash
+   # Install all browsers
+   mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install"
+   
+   # Or just Chromium
+   mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install chromium"
+   ```
+
+2. **Missing Dependencies (Linux)**
+   ```bash
+   # Install system dependencies
+   mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install-deps"
+   ```
+
+3. **Permissions Issues**
+   ```bash
+   # Check Playwright cache directory
+   ls -la ~/.cache/ms-playwright/
+   
+   # Fix permissions if needed
+   chmod -R 755 ~/.cache/ms-playwright/
+   ```
+
+**Solution:**
+- Install Playwright browsers before running tests
+- Install system dependencies on Linux
+- Check file permissions
+- Use Docker with pre-installed browsers for CI
+</Accordion>
+
+### Port and Network Issues
+
+<Accordion title="Problem: Can't connect to test server">
+**Symptoms:**
+- Connection refused errors
+- Tests can't navigate to URL
+- Blank pages
+
+**Common Causes:**
+
+1. **Port Not Available**
+   ```java
+   // Use random port to avoid conflicts
+   @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+   public class MyViewIT extends SpringPlaywrightIT {
+       // SpringPlaywrightIT handles random port
+   }
+   ```
+
+2. **Server Not Started**
+   ```java
+   // Ensure Spring Boot is starting
+   @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+   // Check application context loads
+   ```
+
+3. **Wrong URL**
+   ```java
+   // Wrong: Hardcoded port
+   @Override
+   public String getUrl() {
+       return "http://localhost:8080/";
+   }
+   
+   // Correct: Use injected port
+   @LocalServerPort
+   private int port;
+   
+   @Override
+   public String getUrl() {
+       return String.format("http://localhost:%d/", port);
+   }
+   ```
+
+**Solution:**
+- Use `RANDOM_PORT` in Spring Boot tests
+- Inject `@LocalServerPort` for dynamic port
+- Verify application starts successfully
+- Check for port conflicts
+</Accordion>
+
+### Vaadin-Specific Issues
+
+<Accordion title="Problem: Vaadin Flow not loading properly">
+**Symptoms:**
+- White screen
+- JavaScript errors
+- Components not rendering
+- `WAIT_FOR_VAADIN_SCRIPT` times out
+
+**Common Causes:**
+
+1. **Dev Mode Bundle Not Built**
+   ```bash
+   # Build Vaadin frontend
+   mvn vaadin:build-frontend
+   ```
+
+2. **Node Modules Missing**
+   ```bash
+   # Clean and rebuild
+   mvn clean
+   mvn vaadin:prepare-frontend
+   mvn vaadin:build-frontend
+   ```
+
+3. **Frontend Resources Not Served**
+   ```properties
+   # application.properties for tests
+   vaadin.productionMode=false
+   spring.web.resources.static-locations=classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
+   ```
+
+4. **JavaScript Errors**
+   ```java
+   // Enable console logging to debug
+   page.onConsoleMessage(msg -> System.out.println(msg.text()));
+   ```
+
+**Solution:**
+- Build frontend before running tests
+- Check for JavaScript errors in console
+- Verify Vaadin resources are accessible
+- Use production mode for faster tests (if applicable)
+- Check network tab for failed resource loads
+</Accordion>
+
+## Performance Issues
+
+### Slow Test Execution
+
+<Accordion title="Problem: Tests are taking too long">
+**Symptoms:**
+- Individual tests take > 10 seconds
+- Test suite takes very long
+- Frequent timeouts
+
+**Common Causes:**
+
+1. **Long Default Timeouts**
+   ```java
+   // Reduce timeouts if appropriate
+   @BeforeEach
+   public void setupTest() throws Exception {
+       page = browser.get().newPage();
+       page.navigate(getUrl() + getView());
+       page.waitForFunction(WAIT_FOR_VAADIN_SCRIPT);
+       page.setDefaultTimeout(5000);  // Reduce from 15000
+   }
+   ```
+
+2. **Not Using Production Mode**
+   ```properties
+   # application-test.properties
+   vaadin.productionMode=true
+   ```
+
+3. **Redundant Navigation**
+   ```java
+   // Wrong: Navigating multiple times
+   @Test
+   public void test1() {
+       page.navigate("/form");
+       // ... test
+   }
+   
+   @Test
+   public void test2() {
+       page.navigate("/form");
+       // ... test
+   }
+   
+   // Correct: Use getView() for initial navigation
+   @Override
+   public String getView() {
+       return "form"; // setupTest() navigates once
+   }
+   ```
+
+4. **Not Running in Parallel**
+   ```xml
+   <!-- Enable parallel execution -->
+   <plugin>
+       <groupId>org.apache.maven.plugins</groupId>
+       <artifactId>maven-failsafe-plugin</artifactId>
+       <configuration>
+           <parallel>classes</parallel>
+           <threadCount>4</threadCount>
+       </configuration>
+   </plugin>
+   ```
+
+**Solution:**
+- Use production mode for tests when possible
+- Enable parallel test execution
+- Reduce timeouts if tests don't need long waits
+- Avoid redundant navigation
+- Profile tests to find bottlenecks
+</Accordion>
+
+## ARIA Role Issues
+
+### Wrong ARIA Role in Lookups
+
+<Accordion title="Problem: getByRole returns wrong elements or none">
+**Symptoms:**
+- `getByLabel` can't find element
+- Factory methods return null
+- Multiple elements matched unexpectedly
+
+**Common Causes:**
+
+1. **Wrong ARIA Role for Component**
+   ```java
+   // Wrong: Text inputs have role TEXTBOX
+   page.getByRole(AriaRole.INPUT, new Page.GetByRoleOptions().setName("Email"))
+   
+   // Correct: Use TEXTBOX for text fields
+   page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Email"))
+   ```
+
+2. **Component Type Mismatch**
+   ```java
+   // Wrong: Number fields have role SPINBUTTON, not TEXTBOX
+   TextFieldElement numberField = TextFieldElement.getByLabel(page, "Age");
+   
+   // Correct: Use number field element
+   IntegerFieldElement numberField = IntegerFieldElement.getByLabel(page, "Age");
+   ```
+
+**Reference: Common ARIA Roles**
+- Text inputs: `TEXTBOX`
+- Number inputs: `SPINBUTTON`
+- Date/time pickers: `COMBOBOX`
+- Buttons: `BUTTON`
+- Checkboxes: `CHECKBOX`
+- Radio buttons: `RADIO`
+- ComboBox/Select: `COMBOBOX`
+- Links: `LINK`
+
+**Solution:**
+- Use correct element type for component
+- Check actual ARIA role in browser DevTools
+- Refer to Vaadin documentation for component roles
+- Use Drama Finder factory methods (they use correct roles)
+</Accordion>
+
+## Debugging Tips
+
+### Enable Visual Debugging
+
+```bash
+# Run with visible browser
+mvn -Dit.test=MyViewIT -Dheadless=false verify
+```
+
+### Console Logging
+
+```java
+// Log console messages
+page.onConsoleMessage(msg -> {
+    System.out.println("[" + msg.type() + "] " + msg.text());
+});
+
+// Log page errors
+page.onPageError(exception -> {
+    System.err.println("Page error: " + exception);
+});
+```
+
+### Screenshots on Failure
+
+```java
+@AfterEach
+public void cleanupTest(TestInfo testInfo) {
+    if (testInfo.getTestMethod().isPresent()) {
+        // Screenshot on failure (check via TestWatcher if needed)
+        page.screenshot(new Page.ScreenshotOptions()
+            .setPath(Paths.get("screenshots/" + testInfo.getDisplayName() + ".png")));
+    }
+    page.close();
+}
+```
+
+### Slow Motion
+
+```java
+@BeforeAll
+public static void setup() {
+    Playwright p = Playwright.create();
+    playwright.set(p);
+    browser.set(p.chromium().launch(new LaunchOptions()
+        .setHeadless(false)
+        .setSlowMo(1000))); // 1 second between actions
+}
+```
+
+### Trace Recording
+
+```java
+@BeforeEach
+public void setupTest() throws Exception {
+    page = browser.get().newPage();
+    
+    // Start tracing
+    browser.get().newContext().tracing().start(new Tracing.StartOptions()
+        .setScreenshots(true)
+        .setSnapshots(true));
+    
+    page.navigate(getUrl() + getView());
+    page.waitForFunction(WAIT_FOR_VAADIN_SCRIPT);
+}
+
+@AfterEach
+public void cleanupTest() {
+    // Stop tracing and save
+    browser.get().contexts().get(0).tracing().stop(
+        new Tracing.StopOptions().setPath(Paths.get("trace.zip"))
+    );
+    page.close();
+}
+```
+
+## Getting Help
+
+### Check Documentation
+
+<CardGroup cols={2}>
+  <Card title="Element Reference" icon="book" href="/api-reference">
+    Detailed API documentation
+  </Card>
+  <Card title="Best Practices" icon="lightbulb" href="/guides/best-practices">
+    Writing maintainable tests
+  </Card>
+  <Card title="Common Patterns" icon="code" href="/guides/common-patterns">
+    Real-world examples
+  </Card>
+  <Card title="Setup Guide" icon="gear" href="/guides/testing-setup">
+    Initial configuration
+  </Card>
+</CardGroup>
+
+### Community Resources
+
+- **Drama Finder GitHub**: Report issues and request features
+- **Playwright Documentation**: Official Playwright Java docs
+- **Vaadin Documentation**: Component behavior and attributes
+- **Stack Overflow**: Tag questions with `playwright`, `vaadin`, and `drama-finder`
+
+### Creating Bug Reports
+
+When reporting issues, include:
+
+1. **Minimal reproducible example**
+   ```java
+   @Test
+   public void testReproduceIssue() {
+       // Minimal code that reproduces the problem
+   }
+   ```
+
+2. **Environment details**
+   - Java version
+   - Playwright version
+   - Vaadin version
+   - Drama Finder version
+   - OS and browser
+
+3. **Error messages and stack traces**
+
+4. **Screenshots or videos if applicable**
+
+5. **Expected vs. actual behavior**

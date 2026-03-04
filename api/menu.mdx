@@ -1,0 +1,97 @@
+---
+title: MenuElement
+description: Playwright element wrapper for Vaadin MenuBar submenu overlay testing
+---
+
+## Overview
+
+`MenuElement` is a Playwright wrapper for the menu overlay list `<vaadin-menu-bar-list-box>`. It represents submenu overlays that appear when menu items are clicked.
+
+**Component tag:** `vaadin-menu-bar-list-box`
+
+**Implements:**
+- `HasThemeElement`
+- `HasStyleElement`
+- `HasAriaLabelElement`
+
+## Constructors
+
+### MenuElement(Page page)
+
+Create a `MenuElement` from the page by locating the first `<vaadin-menu-bar-list-box>` element.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+### MenuElement(Locator locator)
+
+Create a `MenuElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the menu overlay element
+</ParamField>
+
+## Methods
+
+### getMenuItemElement(String name)
+
+Get a menu item by its visible label within this menu overlay.
+
+<ParamField path="name" type="String" required>
+  The visible label text of the menu item
+</ParamField>
+
+**Returns:** `MenuItemElement` - The menu item element with the specified label
+
+### openSubMenu(String name)
+
+Click a menu item to open its submenu and return the next overlay.
+
+<ParamField path="name" type="String" required>
+  The visible label text of the menu item that contains a submenu
+</ParamField>
+
+**Returns:** `MenuElement` - The opened nested submenu overlay
+
+## Static Factory Methods
+
+### getByLabel(Page page, String label)
+
+Get a menu overlay by its accessible label (ARIA label).
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the menu overlay (uses ARIA role MENU)
+</ParamField>
+
+**Returns:** `MenuElement` - The menu overlay with the specified label
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.MenuBarElement;
+import org.vaadin.addons.dramafinder.element.MenuElement;
+import org.vaadin.addons.dramafinder.element.MenuItemElement;
+
+// Open a submenu from menu bar
+MenuBarElement menuBar = new MenuBarElement(page);
+MenuElement shareMenu = menuBar.openSubMenu("Share");
+
+// Access items in the submenu
+MenuItemElement emailItem = shareMenu.getMenuItemElement("By email");
+emailItem.click();
+
+// Open nested submenu
+MenuElement socialMenu = shareMenu.openSubMenu("On social media");
+MenuItemElement facebookItem = socialMenu.getMenuItemElement("Facebook");
+facebookItem.click();
+```
+
+## Related Elements
+
+- [MenuBarElement](/api/menu-bar) - Top-level menu bar
+- [MenuItemElement](/api/menu-item) - Individual menu items

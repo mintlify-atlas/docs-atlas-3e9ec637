@@ -1,0 +1,403 @@
+---
+title: Assertions
+description: Learn assertion patterns with auto-retry for reliable Vaadin testing
+---
+
+# Assertions
+
+Drama Finder provides assertion methods that leverage Playwright's auto-retry mechanism to handle asynchronous state changes in Vaadin applications. These assertions automatically wait for conditions to be met, eliminating flaky tests caused by timing issues.
+
+## Auto-Retry Assertions
+
+Playwright assertions automatically retry until the condition is met or a timeout occurs (default 5 seconds). This is essential for testing Vaadin's asynchronous UI updates.
+
+### Why Auto-Retry Matters
+
+```java
+// Bad: No retry, may fail due to timing
+boolean isOpen = dialog.getLocator().getAttribute("opened") != null;
+assertTrue(isOpen);
+
+// Good: Auto-retries until timeout
+assertThat(dialog.getLocator()).hasAttribute("opened", "");
+
+// Even better: Use element's assertion method
+dialog.assertOpen();
+```
+
+<Warning>
+  Avoid using `getAttribute()` or `isVisible()` directly in assertions. These methods return the current state without retrying, leading to flaky tests.
+</Warning>
+
+## Built-in Assertion Methods
+
+Drama Finder element classes provide assertion methods that wrap Playwright assertions with semantic names.
+
+### Visibility Assertions
+
+```java
+// Assert element is visible
+ButtonElement button = ButtonElement.getByText(page, "Save");
+button.assertVisible();
+
+// Assert element is hidden
+DialogElement dialog = DialogElement.get(page);
+dialog.assertHidden();
+```
+
+### State Assertions
+
+```java
+// Checkbox assertions
+CheckboxElement termsCheckbox = CheckboxElement.getByLabel(page, "I agree");
+termsCheckbox.assertChecked();
+termsCheckbox.assertNotChecked();
+termsCheckbox.assertIndeterminate();
+
+// Button enablement
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+saveButton.assertEnabled();
+saveButton.assertDisabled();
+
+// Focus state
+TextFieldElement nameField = TextFieldElement.getByLabel(page, "Name");
+nameField.assertIsFocused();
+nameField.assertIsNotFocused();
+```
+
+### Value Assertions
+
+```java
+// Text field value
+TextFieldElement emailField = TextFieldElement.getByLabel(page, "Email");
+emailField.setValue("user@example.com");
+emailField.assertValue("user@example.com");
+
+// Date picker with LocalDate
+DatePickerElement birthDate = DatePickerElement.getByLabel(page, "Birth Date");
+birthDate.setValue(LocalDate.of(1990, 1, 15));
+birthDate.assertValue(LocalDate.of(1990, 1, 15));
+
+// Combo box selection
+ComboBoxElement country = ComboBoxElement.getByLabel(page, "Country");
+country.selectItem("United States");
+country.assertValue("United States");
+```
+
+### Component-Specific Assertions
+
+```java
+// Accordion panel state
+AccordionElement accordion = new AccordionElement(page.locator("vaadin-accordion"));
+AccordionPanelElement panel = accordion.getPanel("Settings");
+panel.assertOpened();
+panel.assertClosed();
+panel.assertContentVisible();
+
+// Combo box overlay
+ComboBoxElement dropdown = ComboBoxElement.getByLabel(page, "Category");
+dropdown.open();
+dropdown.assertOpened();
+dropdown.assertItemCount(5);
+
+// Dialog state
+DialogElement dialog = DialogElement.get(page);
+dialog.assertOpen();
+dialog.assertClosed();
+```
+
+## Assertion Symmetry Pattern
+
+For each state getter, Drama Finder provides matching assertion methods:
+
+```java
+public boolean isChecked() {
+    return getInputLocator().isChecked();
+}
+
+public void assertChecked() {
+    assertThat(getInputLocator()).isChecked();
+}
+
+public void assertNotChecked() {
+    assertThat(getInputLocator()).not().isChecked();
+}
+```
+
+This pattern ensures consistency and discoverability across all element types.
+
+<Tip>
+  Use element assertion methods instead of direct Playwright assertions. They provide better readability and handle locator delegation correctly.
+</Tip>
+
+## Null Handling in Assertions
+
+Assertion methods handle `null` values to test the absence of attributes:
+
+```java
+public void assertMinLength(Integer min) {
+    if (min != null) {
+        assertThat(getInputLocator()).hasAttribute("minLength", min + "");
+    } else {
+        // Assert attribute is absent
+        assertThat(getInputLocator()).not().hasAttribute("minLength", Pattern.compile(".*"));
+    }
+}
+```
+
+### Usage Example
+
+```java
+TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+
+// Assert minimum length is set
+password.setMinLength(8);
+password.assertMinLength(8);
+
+// Assert no minimum length restriction
+password.setMinLength(0);
+password.assertMinLength(null);
+```
+
+## Attribute vs Property Assertions
+
+<Warning>
+  HTML attributes and DOM properties are different. Use the correct assertion method for your use case.
+</Warning>
+
+### HTML Attributes
+
+Use `hasAttribute()` for HTML attributes:
+
+```java
+// Check HTML attribute
+assertThat(textField.getInputLocator()).hasAttribute("maxlength", "100");
+
+// Check component-level attribute
+assertThat(dialog.getLocator()).hasAttribute("opened", "");
+```
+
+### DOM Properties
+
+Use `hasJSProperty()` for JavaScript properties:
+
+```java
+// Check DOM property
+assertThat(comboBox.getLocator()).hasJSProperty("opened", true);
+assertThat(datePicker.getLocator()).hasJSProperty("value", "2024-03-15");
+```
+
+### When to Use Which
+
+```java
+// HTML attribute (set via setAttribute or HTML)
+String maxLength = getInputLocator().getAttribute("maxlength");
+assertThat(getInputLocator()).hasAttribute("maxlength", "100");
+
+// DOM property (set via JavaScript)
+getLocator().evaluate("(el, v) => el.maxLength = v", 100);
+assertThat(getLocator()).hasJSProperty("maxLength", 100);
+```
+
+## Testing Validation States
+
+```java
+// Field validation
+TextFieldElement emailField = TextFieldElement.getByLabel(page, "Email");
+emailField.setValue("invalid-email");
+emailField.assertInvalid();
+emailField.assertErrorMessage("Please enter a valid email address");
+
+emailField.setValue("user@example.com");
+emailField.assertValid();
+
+// Required field
+TextFieldElement requiredField = TextFieldElement.getByLabel(page, "Username");
+requiredField.assertRequired();
+```
+
+## Component-Level Assertions
+
+### Theme and Style
+
+```java
+// Theme variant assertion
+ButtonElement button = ButtonElement.getByText(page, "Save");
+button.assertTheme("success");
+button.assertTheme("primary");
+
+// CSS class assertion
+button.assertCssClass("custom-button");
+assertThat(button.getLocator()).hasClass("custom-button");
+```
+
+### ARIA and Accessibility
+
+```java
+// ARIA label
+ButtonElement iconButton = ButtonElement.getByText(page, "Icon Button");
+iconButton.assertAriaLabel("Icon Button");
+
+// Tooltip
+ButtonElement tooltipButton = ButtonElement.getByText(page, "Help");
+tooltipButton.assertTooltipHasText("Click for help information");
+```
+
+### Prefix and Suffix Content
+
+```java
+ButtonElement iconButton = ButtonElement.getByText(page, "Download");
+
+// Assert prefix/suffix exist and have expected text
+iconButton.assertPrefixHasText("⬇");
+iconButton.assertSuffixHasText("PDF");
+
+// Using direct Playwright assertions
+assertThat(iconButton.getPrefixLocator()).isVisible();
+assertThat(iconButton.getSuffixLocator()).hasText("PDF");
+```
+
+## Grid Assertions
+
+Grid elements have specialized assertions for tabular data:
+
+```java
+GridElement grid = GridElement.getById(page, "users-grid");
+
+// Row count assertions (using standard Playwright assertions)
+int totalRows = grid.getTotalRowCount();
+assertEquals(10, totalRows);
+
+// Cell content assertions
+Optional<GridElement.CellElement> cell = grid.findCell(0, "Name");
+assertTrue(cell.isPresent());
+assertEquals("John Doe", cell.get().getCellContentLocator().innerText());
+
+// Selection state
+GridElement.RowElement row = grid.findRow(0).orElseThrow();
+assertTrue(row.isSelected());
+```
+
+## Combining Multiple Assertions
+
+```java
+@Test
+public void testCompleteFormValidation() {
+    // Fill form
+    TextFieldElement name = TextFieldElement.getByLabel(page, "Name");
+    TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+    CheckboxElement terms = CheckboxElement.getByLabel(page, "I agree");
+    ButtonElement submit = ButtonElement.getByText(page, "Submit");
+
+    // Initial state assertions
+    name.assertVisible();
+    name.assertValue("");
+    submit.assertDisabled();
+
+    // Fill and validate
+    name.setValue("John Doe");
+    email.setValue("john@example.com");
+    terms.check();
+
+    // Final state assertions
+    name.assertValue("John Doe");
+    email.assertValue("john@example.com");
+    terms.assertChecked();
+    submit.assertEnabled();
+
+    // Submit and verify
+    submit.click();
+    assertThat(page.getByText("Form submitted successfully")).isVisible();
+}
+```
+
+## Timeout Configuration
+
+Adjust timeout for specific assertions when needed:
+
+```java
+// Default timeout (5 seconds)
+button.assertVisible();
+
+// Custom timeout using Playwright assertions
+assertThat(button.getLocator())
+    .isVisible(
+        new LocatorAssertions.IsVisibleOptions().setTimeout(10000)
+    );
+```
+
+## Best Practices
+
+<Accordion title="Always use auto-retry assertions">
+  Use Playwright assertions (`assertThat()`) or element assertion methods instead of raw boolean checks:
+
+  ```java
+  // Bad: No retry
+  assertTrue(button.getLocator().getAttribute("disabled") != null);
+
+  // Good: Auto-retries
+  button.assertDisabled();
+  ```
+</Accordion>
+
+<Accordion title="Test async state changes">
+  After actions that trigger async updates, use assertions that wait:
+
+  ```java
+  button.click();
+  dialog.assertOpen(); // Waits for dialog to open
+
+  comboBox.selectItem("Option 1");
+  comboBox.assertValue("Option 1"); // Waits for value update
+  ```
+</Accordion>
+
+<Accordion title="Use semantic assertion methods">
+  Prefer element-specific assertion methods over generic Playwright assertions:
+
+  ```java
+  // Good: Semantic and clear
+  checkbox.assertChecked();
+
+  // Less clear: Generic assertion
+  assertThat(checkbox.getInputLocator()).isChecked();
+  ```
+</Accordion>
+
+<Accordion title="Handle null in custom assertions">
+  When writing custom assertion helpers, always handle null to test attribute absence:
+
+  ```java
+  public void assertCustomAttribute(String value) {
+      if (value != null) {
+          assertThat(getLocator()).hasAttribute("custom", value);
+      } else {
+          assertThat(getLocator()).not().hasAttribute("custom", Pattern.compile(".*"));
+      }
+  }
+  ```
+</Accordion>
+
+## Common Pitfalls
+
+<Warning>
+  **Pitfall**: Asserting state immediately after an action without waiting.
+
+  **Solution**: Use Playwright assertions which auto-retry. Avoid raw `getAttribute()` checks.
+
+  ```java
+  // Bad: No retry, may flake
+  button.click();
+  assertTrue(dialog.getLocator().getAttribute("opened") != null);
+
+  // Good: Auto-retries until timeout
+  button.click();
+  assertThat(dialog.getLocator()).hasAttribute("opened", "");
+  ```
+</Warning>
+
+## Related Concepts
+
+- [Element Lookup](/concepts/element-lookup) - Find elements using factory methods
+- [Locator Patterns](/concepts/locator-patterns) - Understand locator delegation
+- [ARIA Roles](/concepts/aria-roles) - Accessibility-first testing

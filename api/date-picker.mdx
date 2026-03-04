@@ -1,0 +1,275 @@
+---
+title: DatePickerElement
+description: Playwright element wrapper for Vaadin DatePicker component
+---
+
+# DatePickerElement
+
+Playwright element wrapper for `<vaadin-date-picker>`. Adds convenience methods for `LocalDate` values and lookup by label.
+
+## Component Tag
+
+`vaadin-date-picker`
+
+## Implements
+
+- `HasInputFieldElement`
+- `HasValidationPropertiesElement`
+- `HasClearButtonElement`
+- `HasPlaceholderElement`
+- `HasThemeElement`
+- `FocusableElement`
+- `HasAriaLabelElement`
+- `HasEnabledElement`
+- `HasTooltipElement`
+- `HasLabelElement`
+- `HasHelperElement`
+
+## Factory Methods
+
+### getByLabel (Page)
+
+```java
+public static DatePickerElement getByLabel(Page page, String label)
+```
+
+Get the `DatePickerElement` by its label. Uses ARIA role `COMBOBOX`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `DatePickerElement`
+
+### getByLabel (Locator)
+
+```java
+public static DatePickerElement getByLabel(Locator locator, String label)
+```
+
+Get the `DatePickerElement` by its label within a given scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `DatePickerElement`
+
+## Constructor
+
+### DatePickerElement
+
+```java
+public DatePickerElement(Locator locator)
+```
+
+Create a new `DatePickerElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-date-picker>` element
+</ParamField>
+
+## Methods
+
+### setValue (LocalDate)
+
+```java
+public void setValue(LocalDate date)
+```
+
+Set the value using a `LocalDate` formatted as ISO-8601.
+
+<ParamField path="date" type="LocalDate" required>
+  The date to set
+</ParamField>
+
+### setValue (String)
+
+```java
+@Override
+public void setValue(String value)
+```
+
+Set the value of the input.
+
+<ParamField path="value" type="String" required>
+  Value formatted as in the view (dd/mm/yyyy)
+</ParamField>
+
+### getValueAsLocalDate
+
+```java
+public LocalDate getValueAsLocalDate()
+```
+
+Get the current value as a `LocalDate`.
+
+**Returns:** The parsed date or `null` when empty
+
+### assertValue (String)
+
+```java
+@Override
+public void assertValue(String value)
+```
+
+Assert that the input value equals the provided string.
+
+<ParamField path="value" type="String" required>
+  Expected value formatted as in the view (dd/mm/yyyy)
+</ParamField>
+
+### assertValue (LocalDate)
+
+```java
+public void assertValue(LocalDate value)
+```
+
+Assert that the value equals the provided date.
+
+<ParamField path="value" type="LocalDate">
+  Expected `LocalDate` or `null` for empty
+</ParamField>
+
+### getAriaLabelLocator
+
+```java
+@Override
+public Locator getAriaLabelLocator()
+```
+
+Get the locator for ARIA label.
+
+**Returns:** The input locator
+
+### getFocusLocator
+
+```java
+@Override
+public Locator getFocusLocator()
+```
+
+Get the locator to use for focus operations.
+
+**Returns:** The input locator
+
+### getEnabledLocator
+
+```java
+@Override
+public Locator getEnabledLocator()
+```
+
+Get the locator to use for enabled/disabled checks.
+
+**Returns:** The input locator
+
+## Usage Examples
+
+### Basic Date Selection
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Appointment date");
+datePicker.assertVisible();
+datePicker.assertHelperHasText("Enter the appointment date");
+
+LocalDate testDate = LocalDate.of(2025, 9, 20);
+datePicker.setValue(testDate);
+datePicker.assertValue(testDate);
+```
+
+### String Format
+
+```java
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+LocalDate testDate = LocalDate.of(2025, 9, 20);
+
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Appointment date");
+datePicker.setValue(testDate);
+datePicker.assertValue(formatter.format(testDate));
+```
+
+### Min/Max Validation
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Vacation date");
+LocalDate today = LocalDate.now();
+LocalDate initialDate = today.plusDays(7);
+LocalDate maxDate = today.plusDays(30);
+
+datePicker.assertValue(initialDate);
+
+// Valid date within bounds
+LocalDate validDate = today.plusDays(15);
+datePicker.setValue(validDate);
+datePicker.assertValue(validDate);
+datePicker.assertValid();
+
+// Invalid date (after max)
+LocalDate invalidDate = maxDate.plusDays(1);
+datePicker.setValue(invalidDate);
+datePicker.assertInvalid();
+datePicker.assertErrorMessage("Maximum number of days exceeded.");
+
+// Invalid date (before min)
+LocalDate anotherInvalidDate = today.minusDays(1);
+datePicker.setValue(anotherInvalidDate);
+datePicker.assertInvalid();
+datePicker.assertErrorMessage("Minimum number of days exceeded.");
+```
+
+### Theme
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Appointment date");
+datePicker.assertVisible();
+datePicker.assertTheme("small");
+```
+
+### Focus
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Appointment date");
+DatePickerElement secondPicker = DatePickerElement.getByLabel(page, "Vacation date");
+
+datePicker.assertIsFocused();
+secondPicker.assertIsNotFocused();
+secondPicker.focus();
+secondPicker.assertIsFocused();
+datePicker.assertIsNotFocused();
+```
+
+### ARIA Label
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Invisible label");
+datePicker.assertVisible();
+datePicker.assertAriaLabel("Invisible label");
+```
+
+### Enabled/Disabled
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Enabled/Disabled Field");
+datePicker.assertDisabled();
+
+page.locator("#enable-disable-button").click();
+
+datePicker.assertEnabled();
+```
+
+### Tooltip
+
+```java
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Appointment date");
+datePicker.assertVisible();
+datePicker.assertTooltipHasText("Tooltip for datepicker");
+```

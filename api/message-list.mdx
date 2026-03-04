@@ -1,0 +1,205 @@
+---
+title: MessageListElement
+description: Playwright element wrapper for Vaadin MessageList component testing
+---
+
+## Overview
+
+`MessageListElement` is a Playwright wrapper for `<vaadin-message-list>`. It provides helpers to access individual messages, read their content (text, user name, time) and assert message count. Messages are rendered as `<vaadin-message>` children in light DOM.
+
+**Component tag:** `vaadin-message-list`
+
+**Implements:**
+- `HasStyleElement`
+- `HasThemeElement`
+
+## Constructors
+
+### MessageListElement(Locator locator)
+
+Create a new `MessageListElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-message-list>` element
+</ParamField>
+
+## Message Access Methods
+
+### getMessages()
+
+Get a locator for all `<vaadin-message>` children.
+
+**Returns:** `Locator` - Locator matching every message in the list
+
+### getMessage(int index)
+
+Get a locator for a single message by index.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+**Returns:** `Locator` - Locator for the message at the given index
+
+### getMessageByUserName(String userName)
+
+Get a locator for the first message whose author name contains the given text.
+
+<ParamField path="userName" type="String" required>
+  The user name to search for
+</ParamField>
+
+**Returns:** `Locator` - Locator for the matching message
+
+## Content Accessor Methods
+
+### getMessageText(int index)
+
+Get the text content of the message at the given index.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+**Returns:** `String` - The message text
+
+### getMessageUserName(int index)
+
+Get the user name of the message at the given index.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+**Returns:** `String` - The user name
+
+### getMessageTime(int index)
+
+Get the time of the message at the given index.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+**Returns:** `String` - The time text
+
+## Assertion Methods
+
+### assertMessageCount(int count)
+
+Assert that the list contains exactly the expected number of messages.
+
+<ParamField path="count" type="int" required>
+  Expected message count
+</ParamField>
+
+### assertEmpty()
+
+Assert that the list contains no messages.
+
+### assertMessageText(int index, String expected)
+
+Assert that the message at the given index has the expected text.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+<ParamField path="expected" type="String" required>
+  Expected message text
+</ParamField>
+
+### assertMessageUserName(int index, String expected)
+
+Assert that the message at the given index has the expected user name.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+<ParamField path="expected" type="String" required>
+  Expected user name
+</ParamField>
+
+### assertMessageTime(int index, String expected)
+
+Assert that the message at the given index has the expected time.
+
+<ParamField path="index" type="int" required>
+  Zero-based index of the message
+</ParamField>
+
+<ParamField path="expected" type="String" required>
+  Expected time text
+</ParamField>
+
+## Static Factory Methods
+
+### get(Page page)
+
+Get the first `<vaadin-message-list>` on the page.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+**Returns:** `MessageListElement` - The first message list on the page
+
+### get(Locator locator)
+
+Get the first `<vaadin-message-list>` within a locator scope.
+
+<ParamField path="locator" type="Locator" required>
+  The scope to search within
+</ParamField>
+
+**Returns:** `MessageListElement` - The first message list within the scope
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.MessageListElement;
+
+// Get the message list
+MessageListElement list = MessageListElement.get(page);
+assertThat(list.getLocator()).isVisible();
+
+// Verify message count
+list.assertMessageCount(3);
+
+// Access and verify message content by index
+list.assertMessageText(0, "Hello everyone!");
+list.assertMessageUserName(0, "Alice");
+
+list.assertMessageText(1, "Hi Alice, welcome!");
+list.assertMessageUserName(1, "Bob");
+
+list.assertMessageText(2, "Thanks Bob!");
+list.assertMessageUserName(2, "Alice");
+
+// Get message text programmatically
+String firstMessage = list.getMessageText(0);
+String author = list.getMessageUserName(0);
+String time = list.getMessageTime(0);
+
+// Find message by user name
+Locator bobMessage = list.getMessageByUserName("Bob");
+assertThat(bobMessage).isVisible();
+assertThat(bobMessage.locator("[part='name']")).hasText("Bob");
+
+// Verify empty list
+Locator secondList = page.locator(MessageListElement.FIELD_TAG_NAME).nth(1);
+MessageListElement emptyList = new MessageListElement(secondList);
+emptyList.assertEmpty();
+
+// Access all messages
+Locator allMessages = list.getMessages();
+assertThat(allMessages).hasCount(3);
+```
+
+## Notes
+
+- Messages are rendered as `<vaadin-message>` elements in light DOM
+- Message content is accessed via shadow DOM parts: `name`, `time`, and `message`
+- The message text uses a special slot mechanism and requires JavaScript evaluation
+- Zero-based indexing is used for all message accessor methods

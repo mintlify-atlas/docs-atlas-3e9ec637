@@ -1,0 +1,150 @@
+---
+title: HasValidationPropertiesElement
+description: Mixin interface for components exposing validation state and error messages
+---
+
+## Overview
+
+`HasValidationPropertiesElement` provides methods for interacting with Vaadin components that support validation states and error messages. It allows you to check whether a component is valid or invalid, and to assert the presence and content of error messages.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasValidationPropertiesElement`
+
+## Methods
+
+### getErrorMessageLocator()
+
+```java
+default Locator getErrorMessageLocator()
+```
+
+Returns a locator for the error message slot element.
+
+**Returns:** `Locator` - Locator for the element with `slot="error-message"`
+
+---
+
+### assertValid()
+
+```java
+default void assertValid()
+```
+
+Asserts that the component is valid (does not have the `invalid` attribute).
+
+**Throws:** `AssertionError` if the component has the `invalid` attribute
+
+---
+
+### assertInvalid()
+
+```java
+default void assertInvalid()
+```
+
+Asserts that the component is invalid (has the `invalid` attribute).
+
+**Throws:** `AssertionError` if the component does not have the `invalid` attribute
+
+---
+
+### assertErrorMessage()
+
+```java
+default void assertErrorMessage(String errorMessage)
+```
+
+Asserts that the error message equals the expected text.
+
+<ParamField path="errorMessage" type="String" required>
+  The expected error message text
+</ParamField>
+
+**Throws:** `AssertionError` if the error message does not match
+
+## Implementing Classes
+
+The following element classes implement `HasValidationPropertiesElement`:
+
+- `TextFieldElement` (and its subclasses)
+- `AbstractNumberFieldElement` (and its subclasses)
+- `DatePickerElement`
+- `DateTimePickerElement`
+- `TimePickerElement`
+- `RadioButtonGroupElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import com.microsoft.playwright.Page;
+
+public class ValidationTest {
+    void testValidation(Page page) {
+        TextFieldElement emailField = TextFieldElement.getByLabel(page, "Email");
+        
+        // Initially valid
+        emailField.assertValid();
+        
+        // Enter invalid email
+        emailField.setValue("invalid-email");
+        emailField.blur();
+        
+        // Check validation state
+        emailField.assertInvalid();
+        emailField.assertErrorMessage("Please enter a valid email address");
+        
+        // Fix the error
+        emailField.setValue("user@example.com");
+        emailField.blur();
+        emailField.assertValid();
+    }
+}
+```
+
+## Implementation Details
+
+### Error Message Slot
+
+Vaadin components use a slot-based architecture for error messages. The `getErrorMessageLocator()` method targets elements with `slot="error-message"`, which is where Vaadin renders validation error messages in the shadow DOM.
+
+### Validation Attribute
+
+Vaadin components indicate validation state through the `invalid` HTML attribute. When a component fails validation, the `invalid` attribute is set to an empty string (`invalid=""`). The `assertValid()` and `assertInvalid()` methods check for the presence or absence of this attribute.
+
+## Testing Patterns
+
+### Validation After User Input
+
+```java
+// Trigger validation by blurring after input
+field.setValue("test");
+field.blur();
+field.assertInvalid();
+```
+
+### Server-Side Validation
+
+```java
+// Submit form and wait for server validation
+ButtonElement submit = ButtonElement.getByText(page, "Submit");
+submit.click();
+
+// Check for server-side validation errors
+field.assertInvalid();
+field.assertErrorMessage("This username is already taken");
+```
+
+### Required Field Validation
+
+```java
+// Test required field validation
+field.setValue("");
+field.blur();
+field.assertInvalid();
+field.assertErrorMessage("This field is required");
+```
+
+## Related Interfaces
+
+- [HasInputFieldElement](/api/shared/has-input-field) - Often composed with validation capabilities
+- [FocusableElement](/api/shared/focusable) - Used to trigger validation via blur events

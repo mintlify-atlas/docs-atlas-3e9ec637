@@ -1,0 +1,345 @@
+---
+title: ARIA Roles
+description: Understanding ARIA roles for accessibility-first element lookup in Vaadin testing
+---
+
+# ARIA Roles
+
+Drama Finder uses ARIA (Accessible Rich Internet Applications) roles as the foundation for element lookup. This approach ensures your tests interact with components the same way assistive technologies and real users do, promoting both test reliability and application accessibility.
+
+## Why ARIA Roles Matter
+
+ARIA roles define the semantic meaning of elements for assistive technologies. By using ARIA roles in tests, you:
+
+- **Test accessibility**: Ensure your application is usable by screen readers and other assistive tools
+- **Write resilient tests**: Role-based lookups are less brittle than CSS selectors or IDs
+- **Follow best practices**: Align with Playwright's recommended testing patterns
+- **Improve maintainability**: Tests remain valid even when implementation details change
+
+<Tip>
+  If your test can't find an element by its ARIA role, it's a signal that your application may have accessibility issues that need fixing.
+</Tip>
+
+## ARIA Role Mapping
+
+Every Vaadin component has internal elements with specific ARIA roles. Drama Finder factory methods leverage these roles for accurate element lookup.
+
+### Input Fields
+
+#### Text Input (TEXTBOX)
+
+```java
+// Text fields use AriaRole.TEXTBOX
+TextFieldElement nameField = TextFieldElement.getByLabel(page, "Full Name");
+
+// Implementation uses TEXTBOX role
+public static TextFieldElement getByLabel(Page page, String label) {
+    return new TextFieldElement(
+        page.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.TEXTBOX,
+                    new Page.GetByRoleOptions().setName(label))))
+            .first());
+}
+```
+
+Components using `TEXTBOX` role:
+- `TextFieldElement`
+- `EmailFieldElement`
+- `PasswordFieldElement`
+- `TextAreaElement`
+
+#### Number Input (SPINBUTTON)
+
+```java
+// Number fields use AriaRole.SPINBUTTON
+IntegerFieldElement ageField = IntegerFieldElement.getByLabel(page, "Age");
+BigDecimalFieldElement priceField = BigDecimalFieldElement.getByLabel(page, "Price");
+```
+
+Components using `SPINBUTTON` role:
+- `IntegerFieldElement`
+- `BigDecimalFieldElement`
+- `NumberFieldElement`
+
+#### Date and Time Pickers (COMBOBOX)
+
+```java
+// Date/time pickers use AriaRole.COMBOBOX
+DatePickerElement birthDate = DatePickerElement.getByLabel(page, "Birth Date");
+
+// Implementation
+public static DatePickerElement getByLabel(Page page, String label) {
+    return new DatePickerElement(
+        page.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.COMBOBOX,
+                    new Page.GetByRoleOptions().setName(label))))
+            .first());
+}
+```
+
+Components using `COMBOBOX` role:
+- `DatePickerElement`
+- `TimePickerElement`
+- `DateTimePickerElement`
+- `ComboBoxElement`
+
+<Note>
+  ComboBox and date/time pickers use the `COMBOBOX` role because they allow both selection from a list and keyboard input.
+</Note>
+
+### Interactive Controls
+
+#### Buttons (BUTTON)
+
+```java
+// Buttons use AriaRole.BUTTON
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+ButtonElement cancelButton = ButtonElement.getByText(page, "Cancel");
+
+// Implementation
+public static ButtonElement getByText(Page page, String text) {
+    return new ButtonElement(
+        page.getByRole(AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName(text))
+        .and(page.locator(FIELD_TAG_NAME))
+    );
+}
+```
+
+#### Checkboxes (CHECKBOX)
+
+```java
+// Checkboxes use AriaRole.CHECKBOX
+CheckboxElement termsCheckbox = CheckboxElement.getByLabel(page, "I agree to the terms");
+
+public static CheckboxElement getByLabel(Page page, String label) {
+    return new CheckboxElement(
+        page.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.CHECKBOX,
+                    new Page.GetByRoleOptions().setName(label))))
+            .first());
+}
+```
+
+#### Radio Buttons (RADIO)
+
+```java
+// Radio buttons use AriaRole.RADIO
+RadioButtonElement option = RadioButtonElement.getByLabel(page, "Option A");
+```
+
+## Common Pitfall: Wrong ARIA Role
+
+<Warning>
+  Using the wrong ARIA role in `getByRole()` lookups will cause your tests to fail.
+</Warning>
+
+### Example: Date Picker Role Mismatch
+
+```java
+// Wrong: DatePicker uses COMBOBOX, not TEXTBOX
+Locator datePicker = page.getByRole(AriaRole.TEXTBOX,
+    new Page.GetByRoleOptions().setName("Birth Date")); // Won't find it!
+
+// Correct: Use COMBOBOX role
+DatePickerElement datePicker = DatePickerElement.getByLabel(page, "Birth Date");
+```
+
+### Verifying ARIA Roles
+
+To verify the correct ARIA role for an element:
+
+1. **Inspect the browser**: Use DevTools to examine the element's `role` attribute
+2. **Check documentation**: Refer to the element class Javadoc
+3. **Try the lookup**: Factory methods use the correct role automatically
+
+```java
+// If this works, the role is correct
+TextFieldElement field = TextFieldElement.getByLabel(page, "Name");
+
+// If this fails, check the actual role in the browser
+// Open DevTools → Inspect element → Check "role" attribute
+```
+
+## Role-Based Filtering
+
+Factory methods combine tag names with ARIA role filtering for precise matching:
+
+```java
+// Step 1: Find all vaadin-text-field elements
+page.locator("vaadin-text-field")
+
+// Step 2: Filter for those containing a TEXTBOX role with the label "Email"
+    .filter(new Locator.FilterOptions()
+        .setHas(page.getByRole(AriaRole.TEXTBOX,
+            new Page.GetByRoleOptions().setName("Email"))))
+
+// Step 3: Take the first match
+    .first()
+```
+
+This multi-step approach ensures:
+1. **Component type accuracy**: Only matches the correct Vaadin component tag
+2. **Accessible name matching**: Finds elements by their label or text
+3. **Unique selection**: Returns the first match to avoid ambiguity
+
+## Accessible Names
+
+ARIA roles work with accessible names, which can come from:
+
+- **Labels**: `<label>` elements or `aria-label` attributes
+- **Text content**: Visible text inside buttons or links
+- **aria-labelledby**: References to other elements
+- **title attributes**: Fallback for icon-only elements
+
+```java
+// Finds button by visible text
+ButtonElement button = ButtonElement.getByText(page, "Submit");
+
+// Finds field by associated label
+TextFieldElement field = TextFieldElement.getByLabel(page, "Username");
+
+// Finds button by aria-label
+ButtonElement iconButton = ButtonElement.getByText(page, "Close Dialog"); // aria-label="Close Dialog"
+```
+
+<Tip>
+  If a factory method can't find your element, verify that it has an accessible name (label, text content, or aria-label).
+</Tip>
+
+## Testing Without Visible Labels
+
+For components without visible labels (like icon buttons), use `aria-label`:
+
+```java
+// In your view
+Button iconButton = new Button(VaadinIcon.CLOSE.create());
+iconButton.setAriaLabel("Close Dialog");
+
+// In your test
+ButtonElement closeButton = ButtonElement.getByText(page, "Close Dialog");
+closeButton.click();
+```
+
+## Custom Role Options
+
+Playwright's `GetByRoleOptions` provides additional filters:
+
+```java
+// Find only enabled buttons
+ButtonElement button = ButtonElement.getByText(page,
+    new Page.GetByRoleOptions()
+        .setName("Submit")
+        .setDisabled(false)
+);
+
+// Exact name matching
+ButtonElement button = ButtonElement.getByText(page,
+    new Page.GetByRoleOptions()
+        .setName("Save")
+        .setExact(true)
+);
+
+// Find checked checkbox
+Locator checkbox = page.getByRole(AriaRole.CHECKBOX,
+    new Page.GetByRoleOptions()
+        .setName("Remember me")
+        .setChecked(true)
+);
+```
+
+## Complete ARIA Role Reference
+
+| ARIA Role | Usage | Drama Finder Components |
+|-----------|-------|------------------------|
+| `TEXTBOX` | Single-line text input | TextFieldElement, EmailFieldElement, PasswordFieldElement |
+| `SPINBUTTON` | Numeric input with increment/decrement | IntegerFieldElement, BigDecimalFieldElement, NumberFieldElement |
+| `COMBOBOX` | Dropdown with filtering | ComboBoxElement, DatePickerElement, TimePickerElement, DateTimePickerElement |
+| `BUTTON` | Clickable button | ButtonElement |
+| `CHECKBOX` | Checkable input | CheckboxElement |
+| `RADIO` | Radio button option | RadioButtonElement |
+| `LINK` | Navigation link | Not directly wrapped |
+| `DIALOG` | Modal dialog | DialogElement (container) |
+| `GRID` | Data table | GridElement (container) |
+
+## Debugging ARIA Role Issues
+
+### Issue: Element Not Found
+
+```java
+// Test fails with: Locator not found
+TextFieldElement field = TextFieldElement.getByLabel(page, "Email");
+```
+
+**Debugging steps**:
+
+1. **Verify the label text**: Check for typos or case sensitivity
+2. **Inspect the element**: Open DevTools and check the `role` attribute
+3. **Check shadow DOM**: Ensure the input element is inside the component's shadow DOM
+4. **Verify accessible name**: Check if the label is properly associated
+
+### Issue: Wrong Element Matched
+
+```java
+// Test finds the wrong field
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+```
+
+**Solutions**:
+
+1. **Use scoped lookup**: Restrict search to a specific container
+2. **Use more specific labels**: Ensure labels are unique
+3. **Add `.first()`**: Factory methods already use it, but check custom locators
+
+```java
+// Scope to a specific form
+Locator form = page.locator("form#signup");
+TextFieldElement email = TextFieldElement.getByLabel(form, "Email");
+```
+
+## Best Practices
+
+<Accordion title="Always verify accessible names">
+  Before writing tests, ensure your components have accessible names:
+
+  ```java
+  // View code: Add accessible labels
+  TextField nameField = new TextField("Full Name");
+  Button saveButton = new Button("Save");
+  Button iconButton = new Button(VaadinIcon.CLOSE.create());
+  iconButton.setAriaLabel("Close");
+
+  // Test code: Use accessible names
+  TextFieldElement name = TextFieldElement.getByLabel(page, "Full Name");
+  ButtonElement save = ButtonElement.getByText(page, "Save");
+  ButtonElement close = ButtonElement.getByText(page, "Close");
+  ```
+</Accordion>
+
+<Accordion title="Use factory methods for role-based lookup">
+  Let factory methods handle the correct ARIA role mapping:
+
+  ```java
+  // Good: Factory method uses correct role
+  DatePickerElement date = DatePickerElement.getByLabel(page, "Birth Date");
+
+  // Bad: Manual role selection can be error-prone
+  Locator date = page.getByRole(AriaRole.TEXTBOX, ...) // Wrong role!
+  ```
+</Accordion>
+
+<Accordion title="Test with screen readers">
+  Periodically test your application with a screen reader to verify that:
+  - All interactive elements have accessible names
+  - ARIA roles are correctly applied
+  - Navigation and interaction work as expected
+</Accordion>
+
+## Related Concepts
+
+- [Element Lookup](/concepts/element-lookup) - Factory methods using ARIA roles
+- [Assertions](/concepts/assertions) - Testing element state and behavior
+- [Locator Patterns](/concepts/locator-patterns) - Advanced locator techniques

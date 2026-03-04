@@ -1,0 +1,115 @@
+---
+title: HasStyleElement
+description: Mixin interface for components exposing styling via CSS classes
+---
+
+## Overview
+
+`HasStyleElement` is a mixin interface for Vaadin components that expose styling through CSS classes. This interface provides methods to retrieve and assert CSS class attributes.
+
+## Methods
+
+### getCssClass
+
+```java
+default String getCssClass()
+```
+
+Gets the raw `class` attribute value from the component.
+
+**Returns:** The value of the `class` attribute as a string, or null if not present
+
+---
+
+### assertCssClass
+
+```java
+default void assertCssClass(String... classnames)
+```
+
+Asserts that the component has exactly the provided class names. When `null` is passed, asserts that no classes are present.
+
+<ParamField path="classnames" type="String...">
+  The expected class names, or null to assert no classes are present
+</ParamField>
+
+## Implementation Details
+
+This interface extends `HasLocatorElement` and provides default implementations for all methods.
+
+The `assertCssClass()` method behavior:
+- When class names are provided: asserts the component has exactly those classes
+- When `null` is passed: asserts the component has no classes by checking that the class attribute doesn't match any pattern
+
+## Implementing Classes
+
+This interface is implemented by many Vaadin component wrappers, including:
+
+### Layout Components
+- `AccordionElement`
+- `CardElement`
+- `DetailsElement`
+- `SplitLayoutElement`
+
+### Navigation & Menu Components
+- `MenuBarElement`
+- `MenuElement`
+- `MenuItemElement`
+- `ContextMenuElement`
+
+### Data Display Components
+- `GridElement`
+- `ListBoxElement`
+- `MessageListElement`
+- `VirtualListElement`
+
+### Feedback Components
+- `DialogElement`
+- `NotificationElement`
+- `PopoverElement`
+- `ProgressBarElement`
+
+### Input Components
+- `MessageInputElement`
+- All components implementing `HasInputFieldElement` (via inheritance)
+
+### Other Components
+- `AvatarElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+
+// Get a button by text
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+
+// Get the CSS class attribute
+String classes = saveButton.getCssClass();
+System.out.println("Classes: " + classes);
+
+// Assert specific classes are present
+saveButton.assertCssClass("primary", "large");
+
+// Assert no classes are present
+ButtonElement plainButton = ButtonElement.getByText(page, "Cancel");
+plainButton.assertCssClass(null);
+```
+
+## Usage with Custom Styling
+
+```java
+// In your Vaadin application
+Button button = new Button("Styled Button");
+button.addClassName("custom-style");
+button.addClassName("highlighted");
+
+// In your test
+ButtonElement button = ButtonElement.getByText(page, "Styled Button");
+button.assertCssClass("custom-style", "highlighted");
+```
+
+## See Also
+
+- [HasInputFieldElement](/api/shared/has-input-field) - Includes HasStyleElement for input components
+- [HasThemeElement](/api/shared/has-theme) - For theme variant styling

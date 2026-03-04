@@ -1,0 +1,547 @@
+---
+title: MultiSelectComboBoxElement
+description: Playwright element wrapper for Vaadin MultiSelectComboBox component
+---
+
+# MultiSelectComboBoxElement
+
+Playwright element wrapper for `<vaadin-multi-select-combo-box>`. Provides helpers to open the overlay, filter items, select/deselect multiple items, and query selected chips.
+
+## Component Tag
+
+`vaadin-multi-select-combo-box`
+
+## Implements
+
+- `FocusableElement`
+- `HasAriaLabelElement`
+- `HasInputFieldElement`
+- `HasThemeElement`
+- `HasPlaceholderElement`
+- `HasEnabledElement`
+- `HasTooltipElement`
+- `HasValidationPropertiesElement`
+- `HasClearButtonElement`
+- `HasAllowedCharPatternElement`
+
+## Factory Methods
+
+### getByLabel (Page)
+
+```java
+public static MultiSelectComboBoxElement getByLabel(Page page, String label)
+```
+
+Get the `MultiSelectComboBoxElement` by its label. Uses ARIA role `COMBOBOX`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `MultiSelectComboBoxElement`
+
+### getByLabel (Locator)
+
+```java
+public static MultiSelectComboBoxElement getByLabel(Locator locator, String label)
+```
+
+Get the `MultiSelectComboBoxElement` by its label within a given scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `MultiSelectComboBoxElement`
+
+## Constructor
+
+### MultiSelectComboBoxElement
+
+```java
+public MultiSelectComboBoxElement(Locator locator)
+```
+
+Create a new `MultiSelectComboBoxElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-multi-select-combo-box>` element
+</ParamField>
+
+## Selection Methods
+
+### selectItem
+
+```java
+public void selectItem(String item)
+```
+
+Select an item by its visible label. Opens the overlay and clicks the matching item (toggling its selection).
+
+<ParamField path="item" type="String" required>
+  Label of the item to select
+</ParamField>
+
+### deselectItem
+
+```java
+public void deselectItem(String item)
+```
+
+Deselect an item by its visible label. Opens the overlay and clicks the matching item (toggling its selection off).
+
+<ParamField path="item" type="String" required>
+  Label of the item to deselect
+</ParamField>
+
+### selectItems
+
+```java
+public void selectItems(String... items)
+```
+
+Select multiple items in sequence.
+
+<ParamField path="items" type="String..." required>
+  Labels of the items to select
+</ParamField>
+
+### deselectItems
+
+```java
+public void deselectItems(String... items)
+```
+
+Deselect multiple items in sequence.
+
+<ParamField path="items" type="String..." required>
+  Labels of the items to deselect
+</ParamField>
+
+### filterAndSelectItem
+
+```java
+public void filterAndSelectItem(String filter, String item)
+```
+
+Type filter text into the input, then click the matching item.
+
+<ParamField path="filter" type="String" required>
+  Text to type for filtering
+</ParamField>
+
+<ParamField path="item" type="String" required>
+  Label of the item to select
+</ParamField>
+
+## Filter Methods
+
+### setFilter
+
+```java
+public void setFilter(String filter)
+```
+
+Type into the input to trigger filtering. Uses `pressSequentially` to fire keyboard events that the component listens to for filtering.
+
+<ParamField path="filter" type="String" required>
+  The filter text
+</ParamField>
+
+### getFilter
+
+```java
+public String getFilter()
+```
+
+Get the current filter value from the DOM property.
+
+**Returns:** The current filter string
+
+## Open/Close Methods
+
+### open
+
+```java
+public void open()
+```
+
+Open the combo box overlay.
+
+### close
+
+```java
+public void close()
+```
+
+Close the combo box overlay.
+
+### isOpened
+
+```java
+public boolean isOpened()
+```
+
+Check whether the overlay is currently open.
+
+**Returns:** `true` when the overlay is open
+
+### assertOpened
+
+```java
+public void assertOpened()
+```
+
+Assert that the combo box overlay is open.
+
+### assertClosed
+
+```java
+public void assertClosed()
+```
+
+Assert that the combo box overlay is closed.
+
+## Value Methods
+
+### getValue
+
+```java
+@Override
+public String getValue()
+```
+
+Get the selected values as a comma-separated string from the `selectedItems` property.
+
+**Returns:** Comma-separated selected values, or empty string when nothing is selected
+
+### assertValue
+
+```java
+@Override
+public void assertValue(String expected)
+```
+
+Assert that the displayed value equals the expected string.
+
+<ParamField path="expected" type="String">
+  Expected comma-separated value or empty string for no selection
+</ParamField>
+
+## Read-Only Methods
+
+### isReadOnly
+
+```java
+public boolean isReadOnly()
+```
+
+Check whether the combo box is read-only.
+
+**Returns:** `true` when read-only
+
+### assertReadOnly
+
+```java
+public void assertReadOnly()
+```
+
+Assert that the combo box is read-only.
+
+### assertNotReadOnly
+
+```java
+public void assertNotReadOnly()
+```
+
+Assert that the combo box is not read-only.
+
+## Toggle Button Methods
+
+### getToggleButtonLocator
+
+```java
+public Locator getToggleButtonLocator()
+```
+
+Get locator for the toggle button part.
+
+**Returns:** Locator for the toggle button
+
+### clickToggleButton
+
+```java
+public void clickToggleButton()
+```
+
+Click the dropdown toggle button.
+
+## Overlay Item Methods
+
+### getOverlayItemCount
+
+```java
+public int getOverlayItemCount()
+```
+
+Count visible overlay items.
+
+**Returns:** The number of visible items
+
+### assertItemCount
+
+```java
+public void assertItemCount(int expected)
+```
+
+Assert that the overlay contains exactly the expected number of items.
+
+<ParamField path="expected" type="int" required>
+  Expected item count
+</ParamField>
+
+## Chip Methods
+
+### getChipLocators
+
+```java
+public Locator getChipLocators()
+```
+
+Get the locator for all non-overflow chips.
+
+**Returns:** Locator for selected-value chips
+
+### getOverflowChipLocator
+
+```java
+public Locator getOverflowChipLocator()
+```
+
+Get the locator for the overflow chip.
+
+**Returns:** Locator for the overflow chip
+
+### getSelectedItems
+
+```java
+public List<String> getSelectedItems()
+```
+
+Get the labels of all currently selected items by reading the `selectedItems` property from the web component.
+
+**Returns:** List of selected item labels
+
+### getSelectedItemCount
+
+```java
+public int getSelectedItemCount()
+```
+
+Get the count of currently selected items from the `selectedItems` property.
+
+**Returns:** Number of selected items
+
+### assertSelectedItems
+
+```java
+public void assertSelectedItems(String... expected)
+```
+
+Assert that the selected item labels match the expected values.
+
+<ParamField path="expected" type="String..." required>
+  Expected item labels
+</ParamField>
+
+### assertSelectedCount
+
+```java
+public void assertSelectedCount(int expected)
+```
+
+Assert that the number of selected items matches.
+
+<ParamField path="expected" type="int" required>
+  Expected number of selected items
+</ParamField>
+
+## Component Query Methods
+
+### getOverlayItemComponent (by text)
+
+```java
+public <T extends VaadinElement> T getOverlayItemComponent(String itemText, Class<T> type)
+```
+
+Get a typed component element from an overlay item matching the given text. The component class must be annotated with `@PlaywrightElement` and have a public constructor accepting a single `Locator` parameter.
+
+<ParamField path="itemText" type="String" required>
+  Text of the overlay item to search in
+</ParamField>
+
+<ParamField path="type" type="Class<T>" required>
+  The element class (e.g., `ButtonElement.class`)
+</ParamField>
+
+**Returns:** The first matching component inside the item
+
+### getOverlayItemComponent (by index)
+
+```java
+public <T extends VaadinElement> T getOverlayItemComponent(int index, Class<T> type)
+```
+
+Get a typed component element from an overlay item at the given visible index. The component class must be annotated with `@PlaywrightElement` and have a public constructor accepting a single `Locator` parameter.
+
+<ParamField path="index" type="int" required>
+  0-based visible item index
+</ParamField>
+
+<ParamField path="type" type="Class<T>" required>
+  The element class (e.g., `ButtonElement.class`)
+</ParamField>
+
+**Returns:** The first matching component inside the item
+
+## Locator Methods
+
+### getFocusLocator
+
+```java
+@Override
+public Locator getFocusLocator()
+```
+
+Get the locator to use for focus operations.
+
+**Returns:** The input locator
+
+### getAriaLabelLocator
+
+```java
+@Override
+public Locator getAriaLabelLocator()
+```
+
+Get the locator for ARIA label.
+
+**Returns:** The input locator
+
+### getEnabledLocator
+
+```java
+@Override
+public Locator getEnabledLocator()
+```
+
+Get the locator to use for enabled/disabled checks.
+
+**Returns:** The input locator
+
+## Usage Examples
+
+### Basic Multi-Selection
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Fruits");
+comboBox.assertVisible();
+comboBox.selectItems("Apple", "Cherry");
+comboBox.close();
+comboBox.assertSelectedCount(2);
+```
+
+### Deselection
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Fruits");
+comboBox.selectItems("Apple", "Cherry");
+comboBox.close();
+comboBox.assertSelectedCount(2);
+comboBox.deselectItem("Apple");
+comboBox.close();
+comboBox.assertSelectedCount(1);
+```
+
+### Filter and Select
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Filterable MultiSelect");
+comboBox.filterAndSelectItem("Apr", "Apricot");
+comboBox.close();
+comboBox.assertSelectedCount(1);
+```
+
+### Clear Selection
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "MultiSelect with placeholder and clear button");
+comboBox.selectItems("Apple", "Banana");
+comboBox.close();
+comboBox.assertSelectedCount(2);
+comboBox.clickClearButton();
+comboBox.assertSelectedCount(0);
+```
+
+### Verify Selected Items
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Fruits");
+comboBox.selectItems("Apple", "Cherry");
+comboBox.close();
+assertTrue(comboBox.getSelectedItems().contains("Apple"));
+assertTrue(comboBox.getSelectedItems().contains("Cherry"));
+comboBox.assertSelectedCount(2);
+```
+
+### Lazy Loading
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Lazy MultiSelect");
+comboBox.filterAndSelectItem("Item 250", "Item 250");
+comboBox.close();
+comboBox.assertSelectedCount(1);
+assertThat(page.locator("#lazy-selected-value")).hasText("Item 250");
+```
+
+### Custom Renderer with Components
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Custom renderer");
+comboBox.open();
+ButtonElement button = comboBox.getOverlayItemComponent("Apple", ButtonElement.class);
+button.assertVisible();
+assertThat(button.getLocator()).hasText("Info Apple");
+
+// Click the button inside an item
+ButtonElement bananaButton = comboBox.getOverlayItemComponent("Banana", ButtonElement.class);
+bananaButton.click();
+assertThat(page.locator("#custom-renderer-output")).hasText("Clicked: Banana");
+```
+
+### Read-Only State
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "Read-only MultiSelect");
+comboBox.assertVisible();
+comboBox.assertReadOnly();
+comboBox.assertSelectedCount(2);
+```
+
+### Validation
+
+```java
+MultiSelectComboBoxElement comboBox = MultiSelectComboBoxElement.getByLabel(page, "MultiSelect with theme");
+comboBox.assertValid();
+ButtonElement.getByText(page, "Validate").click();
+comboBox.assertInvalid();
+assertThat(comboBox.getErrorMessageLocator()).hasText("Required field");
+```

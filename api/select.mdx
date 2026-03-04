@@ -1,0 +1,259 @@
+---
+title: SelectElement
+description: Playwright element wrapper for Vaadin Select component
+---
+
+# SelectElement
+
+Playwright element wrapper for `<vaadin-select>`. Provides helpers to open the overlay and pick items by visible text, along with aria/placeholder/validation mixins.
+
+## Component Tag
+
+`vaadin-select`
+
+## Implements
+
+- `FocusableElement`
+- `HasAriaLabelElement`
+- `HasInputFieldElement`
+- `HasPrefixElement`
+- `HasThemeElement`
+- `HasPlaceholderElement`
+- `HasEnabledElement`
+- `HasTooltipElement`
+- `HasValidationPropertiesElement`
+
+## Factory Methods
+
+### getByLabel
+
+```java
+public static SelectElement getByLabel(Page page, String label)
+```
+
+Get the `SelectElement` by its label. Uses ARIA role `BUTTON`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `SelectElement`
+
+## Constructor
+
+### SelectElement
+
+```java
+public SelectElement(Locator locator)
+```
+
+Create a new `SelectElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-select>` element
+</ParamField>
+
+## Methods
+
+### selectItem
+
+```java
+public void selectItem(String item)
+```
+
+Select an item by its visible label.
+
+<ParamField path="item" type="String" required>
+  Label of the item to select
+</ParamField>
+
+### getValue
+
+```java
+@Override
+public String getValue()
+```
+
+Get the selected value label for single-select.
+
+**Returns:** The label of the selected value
+
+### getAriaLabel
+
+```java
+@Override
+public String getAriaLabel()
+```
+
+Get the ARIA label text.
+
+**Returns:** The ARIA label or `null` if not set
+
+### assertAriaLabel
+
+```java
+@Override
+public void assertAriaLabel(String ariaLabel)
+```
+
+Assert the ARIA label text.
+
+<ParamField path="ariaLabel" type="String">
+  Expected ARIA label, or `null` to assert it's hidden
+</ParamField>
+
+### assertPlaceholder
+
+```java
+@Override
+public void assertPlaceholder(String placeholder)
+```
+
+Assert the placeholder text.
+
+<ParamField path="placeholder" type="String" required>
+  Expected placeholder text
+</ParamField>
+
+### assertValue
+
+```java
+@Override
+public void assertValue(String expected)
+```
+
+Assert the selected value label equals the expected string.
+
+<ParamField path="expected" type="String">
+  Expected label or empty for no selection
+</ParamField>
+
+### getInputLocator
+
+```java
+@Override
+public Locator getInputLocator()
+```
+
+Get the locator for the value slot element.
+
+**Returns:** Locator for the input element
+
+### getAriaLabelLocator
+
+```java
+@Override
+public Locator getAriaLabelLocator()
+```
+
+Get the locator for the sr-label slot.
+
+**Returns:** Locator for the ARIA label element
+
+### getFocusLocator
+
+```java
+@Override
+public Locator getFocusLocator()
+```
+
+Get the locator to use for focus operations.
+
+**Returns:** The input locator
+
+### getEnabledLocator
+
+```java
+@Override
+public Locator getEnabledLocator()
+```
+
+Get the locator to use for enabled/disabled checks.
+
+**Returns:** The input locator
+
+### getLabelLocator
+
+```java
+@Override
+public Locator getLabelLocator()
+```
+
+Get the locator for the label slot.
+
+**Returns:** Locator for the label element
+
+## Usage Examples
+
+### Basic Selection
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Sort by");
+select.assertVisible();
+select.assertValue(null);
+select.selectItem("Rating: high to low");
+select.assertValue("Rating: high to low");
+```
+
+### Validation
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Select with theme");
+select.assertValue(null);
+select.assertValid();
+ButtonElement.getByText(page, "Validate").click();
+select.assertInvalid();
+assertThat(select.getErrorMessageLocator()).hasText("Required field");
+```
+
+### Placeholder
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Select with placeholder and clear button");
+select.assertVisible();
+select.assertPlaceholder("Enter text here");
+assertEquals("Enter text here", select.getPlaceholder());
+```
+
+### Prefix
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Sort by");
+assertThat(select.getPrefixLocator()).isVisible();
+assertThat(select.getPrefixLocator()).hasText("Prefix");
+select.assertPrefixHasText("Prefix");
+assertEquals("Prefix", select.getPrefixText());
+```
+
+### Focus and Enabled State
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Sort by");
+select.assertIsFocused();
+
+SelectElement disabledSelect = SelectElement.getByLabel(page, "Enabled/Disabled Field");
+disabledSelect.assertDisabled();
+
+page.locator("#enable-disable-button").click();
+disabledSelect.assertEnabled();
+```
+
+### ARIA Label
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Invisible label");
+select.assertVisible();
+select.assertAriaLabel("Invisible label");
+```
+
+### Tooltip
+
+```java
+SelectElement select = SelectElement.getByLabel(page, "Sort by");
+select.assertVisible();
+select.assertTooltipHasText("Tooltip for select");
+```

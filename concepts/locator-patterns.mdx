@@ -1,0 +1,547 @@
+---
+title: Locator Patterns
+description: Advanced locator delegation and scoped lookup patterns for complex Vaadin components
+---
+
+# Locator Patterns
+
+Drama Finder uses sophisticated locator patterns to handle Vaadin's shadow DOM structure and component composition. Understanding these patterns helps you work with complex components and create custom element wrappers.
+
+## Locator Delegation Pattern
+
+Elements delegate to specific internal locators for different operations. This pattern ensures actions and assertions target the correct DOM element within a component's shadow DOM.
+
+### Why Delegation Matters
+
+Vaadin components often have a wrapper element and internal input elements. Different operations need to target different parts:
+
+```java
+// Component root (vaadin-text-field)
+getLocator().getAttribute("disabled");
+
+// Internal input element
+getInputLocator().getAttribute("value");
+```
+
+### Focus Locator
+
+The focus locator determines which element receives keyboard focus:
+
+```java
+public interface FocusableElement extends HasLocatorElement {
+    default Locator getFocusLocator() {
+        return getLocator(); // Default: component root
+    }
+
+    default void focus() {
+        getFocusLocator().focus();
+    }
+}
+```
+
+Input fields override this to focus the internal input:
+
+```java
+@Override
+public Locator getFocusLocator() {
+    return getInputLocator(); // Focus goes to input, not wrapper
+}
+```
+
+### Enabled Locator
+
+The enabled locator determines where to check the disabled state:
+
+```java
+@Override
+public Locator getEnabledLocator() {
+    return getInputLocator(); // Disabled state is on input
+}
+
+public void assertDisabled() {
+    assertThat(getEnabledLocator()).isDisabled();
+}
+```
+
+### ARIA Label Locator
+
+The ARIA label locator specifies which element has the `aria-label` attribute:
+
+```java
+@Override
+public Locator getAriaLabelLocator() {
+    return getInputLocator(); // aria-label is on input
+}
+
+public void assertAriaLabel(String expected) {
+    assertThat(getAriaLabelLocator()).hasAttribute("aria-label", expected);
+}
+```
+
+### Complete Example
+
+```java
+public class TextFieldElement extends VaadinElement
+        implements FocusableElement, HasAriaLabelElement, HasEnabledElement {
+
+    // Delegate focus operations to input
+    @Override
+    public Locator getFocusLocator() {
+        return getInputLocator();
+    }
+
+    // Delegate aria-label to input
+    @Override
+    public Locator getAriaLabelLocator() {
+        return getInputLocator();
+    }
+
+    // Delegate enabled state to input
+    @Override
+    public Locator getEnabledLocator() {
+        return getInputLocator();
+    }
+}
+```
+
+<Note>
+  Different component aspects (focus, enablement, aria-label) may target different internal elements. Locator delegation ensures each operation uses the correct target.
+</Note>
+
+## Component vs Input Locator
+
+Understanding when to use the component locator versus the input locator is crucial:
+
+### Component Locator (getLocator)
+
+Use for component-level attributes and state:
+
+```java
+// Component-level attribute
+getLocator().getAttribute("opened");
+getLocator().getAttribute("theme");
+getLocator().getAttribute("invalid");
+
+// Component-level property
+getLocator().evaluate("el => el.opened");
+```
+
+### Input Locator (getInputLocator)
+
+Use for input-specific operations:
+
+```java
+// Input-level attribute
+getInputLocator().getAttribute("value");
+getInputLocator().getAttribute("maxlength");
+getInputLocator().getAttribute("disabled");
+
+// Input operations
+getInputLocator().fill("text");
+getInputLocator().focus();
+```
+
+<Warning>
+  **Pitfall**: Calling methods on the wrong locator (component root vs input).
+
+  **Solution**: Use `getInputLocator()` for value/focus operations, `getLocator()` for component-level attributes.
+</Warning>
+
+### Real-World Example
+
+```java
+// Wrong: Checking disabled on component root
+boolean disabled = textField.getLocator().getAttribute("disabled") != null; // May not work!
+
+// Correct: Checking disabled on input element
+boolean disabled = textField.getInputLocator().getAttribute("disabled") != null;
+
+// Even better: Use the element's assertion
+textField.assertDisabled();
+```
+
+## Shadow DOM Piercing
+
+Playwright automatically pierces shadow DOM with CSS selectors, but XPath requires explicit handling.
+
+### CSS Selectors (Auto-Pierce)
+
+```java
+// Pierces shadow DOM automatically
+getLocator().locator("[part~='input']");
+getLocator().locator("[slot='prefix']");
+getLocator().locator(".error-message");
+```
+
+### XPath (Explicit Non-Pierce)
+
+```java
+// Does NOT pierce shadow DOM (explicit xpath prefix)
+getLocator().locator("xpath=./*[not(@slot)][1]");
+
+// Use for direct children only
+getLocator().locator("xpath=./vaadin-button[1]");
+```
+
+<Tip>
+  Prefer CSS selectors over XPath for Vaadin components. CSS selectors automatically pierce shadow DOM and are more readable.
+</Tip>
+
+## Part Selectors
+
+Vaadin components expose internal elements via `part` attributes for styling and testing:
+
+```java
+// Input part
+public Locator getInputLocator() {
+    return getLocator().locator("[part~='input']");
+}
+
+// Clear button part
+public void clickClearButton() {
+    getLocator().locator("[part~='clear-button']").click();
+}
+
+// Toggle button part (ComboBox)
+public Locator getToggleButtonLocator() {
+    return getLocator().locator("[part~='toggle-button']");
+}
+```
+
+### Common Parts
+
+| Component | Part | Purpose |
+|-----------|------|----------|
+| Text Field | `input` | The actual input element |
+| Text Field | `clear-button` | Clear button |
+| Combo Box | `toggle-button` | Dropdown toggle |
+| Date Picker | `toggle-button` | Calendar toggle |
+| Button | `prefix` | Prefix slot content |
+| Button | `suffix` | Suffix slot content |
+
+## Mixin Interfaces (Composition)
+
+Shared behavior is extracted into interfaces with default implementations:
+
+```java
+public interface HasClearButtonElement extends HasLocatorElement {
+    default void clickClearButton() {
+        getLocator().locator("[part~='clear-button']").click();
+    }
+
+    default Locator getClearButtonLocator() {
+        return getLocator().locator("[part~='clear-button']");
+    }
+}
+```
+
+Elements implement mixins to inherit behavior:
+
+```java
+public class TextFieldElement extends VaadinElement
+        implements HasClearButtonElement, HasPrefixElement, HasSuffixElement {
+    // Automatically gets clickClearButton(), getPrefixLocator(), etc.
+}
+```
+
+### Common Mixins
+
+- `FocusableElement` - Focus and blur operations
+- `HasInputFieldElement` - Value, label, helper text
+- `HasValidationPropertiesElement` - Validation state and messages
+- `HasEnabledElement` - Enabled/disabled state
+- `HasClearButtonElement` - Clear button interaction
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasThemeElement` - Theme variant checking
+
+## Composite Element Pattern
+
+Complex components compose simpler elements internally:
+
+```java
+public class DateTimePickerElement extends VaadinElement {
+    private final DatePickerElement datePickerElement;
+    private final TimePickerElement timePickerElement;
+
+    public DateTimePickerElement(Locator locator) {
+        super(locator);
+        // Compose internal elements
+        datePickerElement = new DatePickerElement(
+            locator.locator(DatePickerElement.FIELD_TAG_NAME)
+        );
+        timePickerElement = new TimePickerElement(
+            locator.locator(TimePickerElement.FIELD_TAG_NAME)
+        );
+    }
+
+    public DatePickerElement getDatePicker() {
+        return datePickerElement;
+    }
+
+    public TimePickerElement getTimePicker() {
+        return timePickerElement;
+    }
+}
+```
+
+### Using Composite Elements
+
+```java
+// Access the composite element
+DateTimePickerElement dateTime = DateTimePickerElement.getByLabel(page, "Appointment");
+
+// Access internal elements
+dateTime.getDatePicker().setValue(LocalDate.now());
+dateTime.getTimePicker().setValue(LocalTime.of(14, 30));
+
+// Or use the composite's own methods
+dateTime.setValue(LocalDateTime.now());
+```
+
+## Scoped Lookup Pattern
+
+Factory methods support both page-level and scoped lookups:
+
+```java
+// Page-level lookup
+public static ButtonElement getByText(Page page, String text) {
+    return new ButtonElement(
+        page.getByRole(AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName(text))
+        .and(page.locator(FIELD_TAG_NAME))
+    );
+}
+
+// Scoped lookup (within a container)
+public static ButtonElement getByText(Locator locator, String text) {
+    return new ButtonElement(
+        locator.getByRole(AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(text))
+        .and(locator.page().locator(FIELD_TAG_NAME))
+    );
+}
+```
+
+### Practical Scoping
+
+```java
+// Multiple dialogs on page - scope to the open one
+Locator openDialog = page.locator("vaadin-dialog[opened]");
+ButtonElement okButton = ButtonElement.getByText(openDialog, "OK");
+
+// Multiple forms - scope to specific form
+Locator loginForm = page.locator("form#login");
+Locator signupForm = page.locator("form#signup");
+
+TextFieldElement loginEmail = TextFieldElement.getByLabel(loginForm, "Email");
+TextFieldElement signupEmail = TextFieldElement.getByLabel(signupForm, "Email");
+```
+
+## Grid Cell Access Pattern
+
+Grid uses a specialized pattern for accessing virtualized cells:
+
+```java
+// Find a cell by row and column index
+Optional<GridElement.CellElement> cell = grid.findCell(0, 1);
+
+// Find a cell by row index and column header text
+Optional<GridElement.CellElement> cell = grid.findCell(0, "Name");
+
+// Access cell content
+if (cell.isPresent()) {
+    String content = cell.get().getCellContentLocator().innerText();
+    cell.get().click();
+}
+```
+
+### Grid Locator Delegation
+
+Grid cells delegate to different locators:
+
+```java
+public class CellElement {
+    private final Locator tableCell;      // The <td> element
+    private final Locator cellContent;    // The vaadin-grid-cell-content
+
+    // Get the table cell (for structure)
+    public Locator getTableCellLocator() {
+        return tableCell;
+    }
+
+    // Get the cell content (for interaction)
+    public Locator getCellContentLocator() {
+        return cellContent;
+    }
+
+    // Click delegates to content
+    public void click() {
+        cellContent.click();
+    }
+}
+```
+
+## Advanced Locator Chaining
+
+### Filter Options
+
+```java
+// Chain filters for precise matching
+Locator button = page.locator("vaadin-button")
+    .filter(new Locator.FilterOptions()
+        .setHas(page.getByRole(AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName("Save"))))
+    .filter(new Locator.FilterOptions()
+        .setHasText("Save"))
+    .first();
+```
+
+### And/Or Combinations
+
+```java
+// Combine locators with .and()
+Locator button = page.getByRole(AriaRole.BUTTON,
+        new Page.GetByRoleOptions().setName("Save"))
+    .and(page.locator("vaadin-button"))
+    .and(page.locator("[theme~='primary']"));
+
+// Or combine with .or()
+Locator submitButtons = page.locator("[type='submit']")
+    .or(page.getByRole(AriaRole.BUTTON,
+        new Page.GetByRoleOptions().setName("Submit")));
+```
+
+## Creating Custom Elements
+
+When creating custom element wrappers, follow these patterns:
+
+### 1. Extend VaadinElement
+
+```java
+public class CustomFieldElement extends VaadinElement {
+    public static final String FIELD_TAG_NAME = "custom-field";
+
+    public CustomFieldElement(Locator locator) {
+        super(locator);
+    }
+}
+```
+
+### 2. Implement Relevant Mixins
+
+```java
+public class CustomFieldElement extends VaadinElement
+        implements HasInputFieldElement, FocusableElement, HasEnabledElement {
+    // Mixins provide default implementations
+}
+```
+
+### 3. Override Locator Delegation
+
+```java
+@Override
+public Locator getFocusLocator() {
+    return getInputLocator(); // Delegate to input
+}
+
+@Override
+public Locator getEnabledLocator() {
+    return getInputLocator(); // Check disabled on input
+}
+```
+
+### 4. Add Factory Methods
+
+```java
+public static CustomFieldElement getByLabel(Page page, String label) {
+    return new CustomFieldElement(
+        page.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(page.getByRole(AriaRole.TEXTBOX,
+                    new Page.GetByRoleOptions().setName(label))))
+            .first());
+}
+
+public static CustomFieldElement getByLabel(Locator locator, String label) {
+    return new CustomFieldElement(
+        locator.locator(FIELD_TAG_NAME)
+            .filter(new Locator.FilterOptions()
+                .setHas(locator.getByLabel(label)))
+            .first());
+}
+```
+
+## Best Practices
+
+<Accordion title="Use part selectors for internal elements">
+  Prefer `part` selectors over complex CSS for accessing internal component elements:
+
+  ```java
+  // Good: Using part selector
+  getLocator().locator("[part~='input']")
+
+  // Bad: Complex CSS selector
+  getLocator().locator("div.input-container > input.field-input")
+  ```
+</Accordion>
+
+<Accordion title="Delegate to the correct locator">
+  Always use the appropriate locator for each operation:
+
+  ```java
+  // Component-level: theme, opened, invalid
+  getLocator().getAttribute("theme");
+
+  // Input-level: value, disabled, focus
+  getInputLocator().fill("value");
+  getInputLocator().focus();
+  ```
+</Accordion>
+
+<Accordion title="Leverage mixin composition">
+  Implement mixins to inherit common behavior instead of duplicating code:
+
+  ```java
+  // Implements mixins for inherited behavior
+  public class CustomElement extends VaadinElement
+          implements FocusableElement, HasClearButtonElement {
+      // Gets focus(), blur(), clickClearButton() for free
+  }
+  ```
+</Accordion>
+
+<Accordion title="Always use .first() for uniqueness">
+  Factory methods should always call `.first()` to avoid ambiguous matches:
+
+  ```java
+  // Good: Ensures single element
+  return new ButtonElement(
+      page.locator(FIELD_TAG_NAME)
+          .filter(...)
+          .first()  // Always add .first()
+  );
+  ```
+</Accordion>
+
+## Common Pitfalls
+
+<Warning>
+  **Pitfall**: Using XPath selectors that don't pierce shadow DOM.
+
+  **Solution**: Use CSS selectors which automatically pierce shadow DOM.
+
+  ```java
+  // Bad: XPath doesn't pierce shadow DOM
+  getLocator().locator("xpath=//input[@type='text']");
+
+  // Good: CSS pierces shadow DOM
+  getLocator().locator("[part~='input']");
+  ```
+</Warning>
+
+## Related Concepts
+
+- [Element Lookup](/concepts/element-lookup) - Factory methods and lookup patterns
+- [ARIA Roles](/concepts/aria-roles) - Role-based element selection
+- [Assertions](/concepts/assertions) - Testing with the correct locators

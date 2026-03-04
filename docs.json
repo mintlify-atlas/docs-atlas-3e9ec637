@@ -1,122 +1,167 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Drama Finder",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#00B4F0",
+    "light": "#00E0FF",
+    "dark": "#0089C7"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/parttio/dramafinder"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/parttio/dramafinder"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/element-lookup",
+              "concepts/assertions",
+              "concepts/aria-roles",
+              "concepts/locator-patterns"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/testing-setup",
+              "guides/best-practices",
+              "guides/common-patterns",
+              "guides/troubleshooting"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Base Elements",
             "pages": [
-              "api-reference/introduction"
+              "api/vaadin-element",
+              "api/playwright-element"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Form Inputs",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/text-field",
+              "api/text-area",
+              "api/email-field",
+              "api/password-field",
+              "api/number-field",
+              "api/integer-field",
+              "api/big-decimal-field",
+              "api/checkbox",
+              "api/radio-button-group",
+              "api/select",
+              "api/combo-box",
+              "api/multi-select-combo-box",
+              "api/date-picker",
+              "api/time-picker",
+              "api/date-time-picker"
+            ]
+          },
+          {
+            "group": "Buttons & Actions",
+            "pages": [
+              "api/button"
+            ]
+          },
+          {
+            "group": "Layouts & Containers",
+            "pages": [
+              "api/card",
+              "api/details",
+              "api/accordion",
+              "api/accordion-panel",
+              "api/tab-sheet",
+              "api/tab",
+              "api/split-layout"
+            ]
+          },
+          {
+            "group": "Data Display",
+            "pages": [
+              "api/grid",
+              "api/tree-grid",
+              "api/list-box",
+              "api/virtual-list",
+              "api/avatar",
+              "api/progress-bar"
+            ]
+          },
+          {
+            "group": "Navigation",
+            "pages": [
+              "api/menu-bar",
+              "api/menu",
+              "api/menu-item",
+              "api/context-menu",
+              "api/side-navigation",
+              "api/side-navigation-item"
+            ]
+          },
+          {
+            "group": "Overlays",
+            "pages": [
+              "api/dialog",
+              "api/notification",
+              "api/popover"
+            ]
+          },
+          {
+            "group": "Communication",
+            "pages": [
+              "api/message-list",
+              "api/message-input"
+            ]
+          },
+          {
+            "group": "File Management",
+            "pages": [
+              "api/upload"
+            ]
+          },
+          {
+            "group": "Shared Interfaces",
+            "pages": [
+              "api/shared/has-input-field",
+              "api/shared/has-value",
+              "api/shared/has-validation-properties",
+              "api/shared/has-enabled",
+              "api/shared/focusable",
+              "api/shared/has-theme",
+              "api/shared/has-style",
+              "api/shared/has-clear-button",
+              "api/shared/has-placeholder",
+              "api/shared/has-tooltip",
+              "api/shared/has-label",
+              "api/shared/has-helper",
+              "api/shared/has-aria-label"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

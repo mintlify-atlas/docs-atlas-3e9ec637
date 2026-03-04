@@ -1,0 +1,264 @@
+---
+title: IntegerFieldElement
+description: Playwright element wrapper for Vaadin integer fields
+---
+
+## Overview
+
+The `IntegerFieldElement` class is a Playwright wrapper for the `<vaadin-integer-field>` component. It provides methods to interact with integer input fields, including min/max/step constraints and step controls.
+
+## Component Tag
+
+`<vaadin-integer-field>`
+
+## Extends
+
+- `AbstractNumberFieldElement`
+
+## Inherited Interfaces
+
+- `HasValidationPropertiesElement` - Validation state and error messages
+- `HasInputFieldElement` - Value, label, helper text, and styling
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasClearButtonElement` - Clear button functionality
+- `HasPlaceholderElement` - Placeholder text
+- `HasAllowedCharPatternElement` - Character input restrictions
+- `HasThemeElement` - Theme variants
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-integer-field>` element
+</ParamField>
+
+```java
+public IntegerFieldElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel (Page)
+
+Get an integer field by its accessible label. Uses ARIA role `spinbutton`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the integer field
+</ParamField>
+
+```java
+public static IntegerFieldElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+IntegerFieldElement integerField = IntegerFieldElement.getByLabel(page, "Quantity");
+integerField.setValue("123");
+integerField.assertValue("123");
+```
+
+### getByLabel (Locator)
+
+Get an integer field by its accessible label within a scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the integer field
+</ParamField>
+
+```java
+public static IntegerFieldElement getByLabel(Locator locator, String label)
+```
+
+## Methods
+
+### getStep
+
+Get the current step value.
+
+```java
+public Integer getStep()
+```
+
+**Returns:** The step as an `Integer`, or `null` if not set
+
+### setStep
+
+Set the step value.
+
+<ParamField path="step" type="int" required>
+  The step to apply
+</ParamField>
+
+```java
+public void setStep(int step)
+```
+
+### assertStep
+
+Assert the step attribute matches the expected value.
+
+<ParamField path="step" type="Integer">
+  The expected step, or `null` to assert no explicit step is set
+</ParamField>
+
+```java
+public void assertStep(Integer step)
+```
+
+### getMin
+
+Get the current minimum value.
+
+```java
+public Integer getMin()
+```
+
+**Returns:** The minimum as an `Integer`, or `null` if not set
+
+### setMin
+
+Set the minimum value.
+
+<ParamField path="min" type="int" required>
+  The minimum to apply
+</ParamField>
+
+```java
+public void setMin(int min)
+```
+
+### assertMin
+
+Assert the min attribute matches the expected value.
+
+<ParamField path="min" type="Integer">
+  The expected minimum, or `null` to assert no explicit minimum is set
+</ParamField>
+
+```java
+public void assertMin(Integer min)
+```
+
+### getMax
+
+Get the current maximum value.
+
+```java
+public Integer getMax()
+```
+
+**Returns:** The maximum as an `Integer`, or `null` if not set
+
+### setMax
+
+Set the maximum value.
+
+<ParamField path="max" type="int" required>
+  The maximum to apply
+</ParamField>
+
+```java
+public void setMax(int max)
+```
+
+### assertMax
+
+Assert the max attribute matches the expected value.
+
+<ParamField path="max" type="Integer">
+  The expected maximum, or `null` to assert no explicit maximum is set
+</ParamField>
+
+```java
+public void assertMax(Integer max)
+```
+
+## Inherited Methods
+
+From `AbstractNumberFieldElement`:
+- `getHasControls()` - Check if step controls are visible
+- `assertHasControls(boolean hasControls)` - Assert step controls visibility
+- `clickIncreaseButton()` - Click the increase button
+- `clickDecreaseButton()` - Click the decrease button
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert field is valid
+- `assertInvalid()` - Assert field is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `FocusableElement`:
+- `focus()` - Focus the field
+- `blur()` - Blur the field
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert field has focus
+- `assertIsNotFocused()` - Assert field does not have focus
+
+## Complete Example
+
+```java
+@Test
+public void testIntegerFieldMinMaxStep() {
+    // Find integer field by label
+    IntegerFieldElement integerField = IntegerFieldElement.getByLabel(page, "Score");
+    integerField.assertVisible();
+    
+    // Check constraints
+    integerField.assertMin(0);
+    integerField.assertMax(100);
+    integerField.assertStep(10);
+    
+    // Check initial value
+    integerField.assertValue("10");
+    
+    // Test valid value
+    integerField.setValue("50");
+    integerField.assertValue("50");
+    integerField.assertValid();
+    
+    // Test out of bounds value
+    integerField.setValue("110");
+    integerField.assertInvalid();
+    
+    // Test minimum violation
+    integerField.setValue("-10");
+    integerField.assertInvalid();
+}
+
+@Test
+public void testIntegerFieldStepControls() {
+    IntegerFieldElement integerField = IntegerFieldElement.getByLabel(page, "With Controls");
+    integerField.assertVisible();
+    integerField.assertHasControls(true);
+    
+    // Test increment
+    integerField.assertValue("");
+    integerField.clickIncreaseButton();
+    integerField.assertValue("1");
+    integerField.clickIncreaseButton();
+    integerField.assertValue("2");
+    
+    // Test decrement
+    integerField.clickDecreaseButton();
+    integerField.assertValue("1");
+}
+```

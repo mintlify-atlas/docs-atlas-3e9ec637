@@ -1,0 +1,220 @@
+---
+title: HasThemeElement
+description: Mixin interface for components that support the theme attribute
+---
+
+## Overview
+
+`HasThemeElement` provides methods for reading and asserting the `theme` attribute on Vaadin components. The theme attribute is used to apply visual variants to components, such as different button styles (primary, secondary, tertiary) or field appearances (small, minimal).
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasThemeElement`
+
+## Methods
+
+### getTheme()
+
+```java
+default String getTheme()
+```
+
+Retrieves the current value of the `theme` attribute.
+
+**Returns:** `String` - The theme attribute value, or `null` if not set
+
+---
+
+### assertTheme()
+
+```java
+default void assertTheme(String theme)
+```
+
+Asserts that the `theme` attribute matches the expected value. When `null` is provided, asserts that the theme attribute is absent.
+
+<ParamField path="theme" type="String">
+  The expected theme value, or `null` to assert absence
+</ParamField>
+
+**Throws:** `AssertionError` if the theme does not match or is present when `null` is expected
+
+## Implementing Classes
+
+The following element classes implement `HasThemeElement`:
+
+- `TextFieldElement` (and all subclasses)
+- `AvatarElement`
+- `CardElement`
+- `DetailsElement`
+- `DialogElement`
+- `GridElement`
+- `MenuBarElement`
+- `MenuElement`
+- `MenuItemElement`
+- `MessageListElement`
+- `NotificationElement`
+- `PopoverElement`
+- `ProgressBarElement`
+- `SplitLayoutElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import com.microsoft.playwright.Page;
+
+public class ThemeTest {
+    void testComponentThemes(Page page) {
+        ButtonElement primaryButton = ButtonElement.getByText(page, "Save");
+        ButtonElement secondaryButton = ButtonElement.getByText(page, "Cancel");
+        TextFieldElement smallField = TextFieldElement.getByLabel(page, "Code");
+        
+        // Assert button themes
+        primaryButton.assertTheme("primary");
+        secondaryButton.assertTheme("tertiary");
+        
+        // Assert field theme variant
+        smallField.assertTheme("small");
+        
+        // Assert no theme is applied
+        TextFieldElement defaultField = TextFieldElement.getByLabel(page, "Name");
+        defaultField.assertTheme(null);
+    }
+}
+```
+
+## Theme Variants
+
+Vaadin components support various theme variants through the `theme` attribute. Common variants include:
+
+### Button Themes
+- `primary` - Primary action button (prominent styling)
+- `secondary` - Secondary action (less prominent)
+- `tertiary` - Tertiary action (minimal styling)
+- `error` - Destructive actions (red)
+- `success` - Positive actions (green)
+- `contrast` - High contrast styling
+- `icon` - Icon-only button styling
+- `small` - Smaller size variant
+
+### Field Themes
+- `small` - Compact field size
+- `helper-above-field` - Helper text above field
+- `always-float-label` - Label always in floating position
+
+### Grid Themes
+- `no-border` - Remove borders
+- `no-row-borders` - Remove row borders only
+- `column-borders` - Add column borders
+- `row-stripes` - Alternating row colors
+- `compact` - Reduced padding
+- `wrap-cell-content` - Allow text wrapping
+
+### Component-Specific Themes
+- Avatar: `large`, `small`, `xsmall`
+- Details: `filled`, `reverse`, `small`
+- Notification: `primary`, `success`, `warning`, `error`
+
+## Implementation Details
+
+### Null Handling
+
+The `assertTheme()` method properly handles `null` values to assert the absence of a theme attribute:
+
+```java
+if (theme != null) {
+    assertThat(getLocator()).hasAttribute("theme", theme);
+} else {
+    assertThat(getLocator()).not().hasAttribute("theme", Pattern.compile(".*"));
+}
+```
+
+This allows you to verify that no theme has been applied to a component.
+
+### Multiple Theme Values
+
+Vaadin components can have multiple theme variants applied simultaneously, separated by spaces:
+
+```java
+// Button with both "primary" and "small" themes
+button.assertTheme("primary small");
+```
+
+The `theme` attribute works like CSS classes, allowing multiple space-separated values.
+
+## Testing Patterns
+
+### Test Theme Variants
+
+```java
+// Test different button styles
+ButtonElement save = ButtonElement.getByText(page, "Save");
+ButtonElement cancel = ButtonElement.getByText(page, "Cancel");
+ButtonElement delete = ButtonElement.getByText(page, "Delete");
+
+save.assertTheme("primary");
+cancel.assertTheme("tertiary");
+delete.assertTheme("error");
+```
+
+### Test Combined Themes
+
+```java
+// Test multiple theme values on same component
+ButtonElement iconButton = ButtonElement.getByText(page, "Edit");
+iconButton.assertTheme("icon small");
+```
+
+### Test Default (No Theme)
+
+```java
+// Verify no theme is applied
+TextFieldElement field = TextFieldElement.getByLabel(page, "Description");
+field.assertTheme(null);
+```
+
+### Theme-Based Visual Testing
+
+```java
+// Different themes may affect visibility or interaction
+NotificationElement notification = NotificationElement.get(page);
+notification.assertTheme("error");
+// Error theme may use red color and prominent styling
+```
+
+## Best Practices
+
+### Use Semantic Theme Names
+
+When testing themes, use the semantic names that match your UI design system:
+
+```java
+primaryAction.assertTheme("primary");
+destructiveAction.assertTheme("error");
+subtleAction.assertTheme("tertiary");
+```
+
+### Test Responsive Variants
+
+Some themes may change based on screen size or container:
+
+```java
+// Test compact theme on smaller screens
+page.setViewportSize(360, 640);
+field.assertTheme("small");
+```
+
+### Verify Theme Consistency
+
+Ensure related components use consistent theming:
+
+```java
+// All form fields should use same theme
+field1.assertTheme("small");
+field2.assertTheme("small");
+field3.assertTheme("small");
+```
+
+## Related Interfaces
+
+- [HasStyleElement](/api/shared/has-style) - For CSS class-based styling

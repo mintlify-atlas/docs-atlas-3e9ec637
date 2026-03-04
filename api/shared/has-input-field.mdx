@@ -1,0 +1,81 @@
+---
+title: HasInputFieldElement
+description: Convenience mixin grouping common capabilities of Vaadin input fields
+---
+
+## Overview
+
+`HasInputFieldElement` is a convenience mixin interface that groups common capabilities of Vaadin input field components. It combines several specialized interfaces to provide a unified set of features for components that support labels, values, helper text, and styling.
+
+This interface does not define any methods of its own but serves as a composition of other mixin interfaces, providing a convenient way to declare that an element supports all standard input field capabilities.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasInputFieldElement`
+
+## Composed Interfaces
+
+`HasInputFieldElement` extends the following interfaces:
+
+- `HasHelperElement` - Helper text support via helper slot
+- `HasValueElement` - Value handling for input fields
+- `HasStyleElement` - CSS class styling support
+- `HasLabelElement` - Visible label support
+
+## Methods
+
+Since this interface is a pure composition mixin, it inherits all methods from its parent interfaces. See the individual interface documentation for available methods:
+
+- [HasHelperElement](/api/shared/has-helper) - Methods for helper text
+- [HasValueElement](/api/shared/has-value) - Methods for value handling
+- [HasStyleElement](/api/shared/has-style) - Methods for CSS styling
+- [HasLabelElement](/api/shared/has-label) - Methods for label handling
+
+## Implementing Classes
+
+The following element classes implement `HasInputFieldElement`:
+
+- `TextFieldElement` (and its subclasses: `TextAreaElement`, `PasswordFieldElement`, `EmailFieldElement`)
+- `AbstractNumberFieldElement` (and its subclasses: `NumberFieldElement`, `IntegerFieldElement`, `BigDecimalFieldElement`)
+- `DatePickerElement`
+- `DateTimePickerElement`
+- `TimePickerElement`
+- `ComboBoxElement`
+- `MultiSelectComboBoxElement`
+- `SelectElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import com.microsoft.playwright.Page;
+
+public class InputFieldTest {
+    void testInputField(Page page) {
+        // Get a text field by its label
+        TextFieldElement field = TextFieldElement.getByLabel(page, "Email");
+        
+        // Methods from HasLabelElement
+        field.assertLabel("Email");
+        
+        // Methods from HasValueElement
+        field.setValue("user@example.com");
+        field.assertValue("user@example.com");
+        
+        // Methods from HasHelperElement
+        field.assertHelperHasText("Enter your email address");
+        
+        // Methods from HasStyleElement
+        field.assertCssClass("custom-field");
+    }
+}
+```
+
+## Design Purpose
+
+This mixin interface follows the **Composition Pattern** to avoid code duplication across input field implementations. Instead of each input field class implementing the same set of interfaces repeatedly, they can simply implement `HasInputFieldElement` to gain all standard input field capabilities.
+
+## Related Interfaces
+
+- [HasValidationPropertiesElement](/api/shared/has-validation-properties) - Often used alongside this interface for form validation
+- [HasPlaceholderElement](/api/shared/has-placeholder) - Commonly combined with input fields
+- [HasClearButtonElement](/api/shared/has-clear-button) - Often used with text inputs
+- [FocusableElement](/api/shared/focusable) - Focus management for interactive fields

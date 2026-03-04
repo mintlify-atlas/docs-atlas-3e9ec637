@@ -1,0 +1,324 @@
+---
+title: TextFieldElement
+description: Playwright element wrapper for Vaadin text fields
+---
+
+## Overview
+
+The `TextFieldElement` class is a Playwright wrapper for the `<vaadin-text-field>` component. It provides methods to interact with text fields, including setting values, validating input, and accessing field properties.
+
+## Component Tag
+
+`<vaadin-text-field>`
+
+## Extends
+
+- `VaadinElement`
+
+## Implements
+
+- `HasValidationPropertiesElement` - Validation state and error messages
+- `HasInputFieldElement` - Value, label, helper text, and styling
+- `HasPrefixElement` - Prefix slot content
+- `HasSuffixElement` - Suffix slot content
+- `HasClearButtonElement` - Clear button functionality
+- `HasPlaceholderElement` - Placeholder text
+- `HasAllowedCharPatternElement` - Character input restrictions
+- `HasThemeElement` - Theme variants
+- `FocusableElement` - Focus and blur operations
+- `HasAriaLabelElement` - ARIA label support
+- `HasEnabledElement` - Enabled/disabled state
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the `<vaadin-text-field>` element
+</ParamField>
+
+```java
+public TextFieldElement(Locator locator)
+```
+
+## Factory Methods
+
+### getByLabel (Page)
+
+Get a text field by its accessible label. Uses ARIA role `textbox`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the text field
+</ParamField>
+
+```java
+public static TextFieldElement getByLabel(Page page, String label)
+```
+
+#### Example
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Username");
+textField.setValue("john.doe");
+textField.assertValue("john.doe");
+```
+
+### getByLabel (Locator)
+
+Get a text field by its accessible label within a scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the text field
+</ParamField>
+
+```java
+public static TextFieldElement getByLabel(Locator locator, String label)
+```
+
+## Methods
+
+### getMinLength
+
+Get the current minimum length constraint.
+
+```java
+public Integer getMinLength()
+```
+
+**Returns:** The minimum length or `null` if not set
+
+### setMinLength
+
+Set the minimum length constraint.
+
+<ParamField path="min" type="int" required>
+  The minimum length
+</ParamField>
+
+```java
+public void setMinLength(int min)
+```
+
+### assertMinLength
+
+Assert the minimum length matches the expected value.
+
+<ParamField path="min" type="Integer">
+  The expected minimum length, or `null` to assert no minimum is set
+</ParamField>
+
+```java
+public void assertMinLength(Integer min)
+```
+
+#### Example
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Validated Textfield");
+textField.assertMinLength(6);
+assertEquals(6, textField.getMinLength());
+```
+
+### getMaxLength
+
+Get the current maximum length constraint.
+
+```java
+public Integer getMaxLength()
+```
+
+**Returns:** The maximum length or `null` if not set
+
+### setMaxLength
+
+Set the maximum length constraint.
+
+<ParamField path="max" type="int" required>
+  The maximum length
+</ParamField>
+
+```java
+public void setMaxLength(int max)
+```
+
+### assertMaxLength
+
+Assert the maximum length matches the expected value.
+
+<ParamField path="max" type="Integer">
+  The expected maximum length, or `null` to assert no maximum is set
+</ParamField>
+
+```java
+public void assertMaxLength(Integer max)
+```
+
+#### Example
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Validated Textfield");
+textField.assertMaxLength(7);
+assertEquals(7, textField.getMaxLength());
+```
+
+### getPattern
+
+Get the current validation pattern.
+
+```java
+public String getPattern()
+```
+
+**Returns:** The pattern or `null` if not set
+
+### setPattern
+
+Set the validation pattern.
+
+<ParamField path="pattern" type="String" required>
+  The regex pattern
+</ParamField>
+
+```java
+public void setPattern(String pattern)
+```
+
+### assertPattern
+
+Assert the pattern matches the expected value.
+
+<ParamField path="pattern" type="String">
+  The expected pattern, or `null` to assert no pattern is set
+</ParamField>
+
+```java
+public void assertPattern(String pattern)
+```
+
+#### Example
+
+```java
+TextFieldElement textField = TextFieldElement.getByLabel(page, "Validated Textfield");
+textField.assertPattern("\\d{7}");
+assertEquals("\\d{7}", textField.getPattern());
+```
+
+### getFocusLocator
+
+Get the locator for focus operations. Returns the input locator.
+
+```java
+public Locator getFocusLocator()
+```
+
+### getAriaLabelLocator
+
+Get the locator for ARIA label operations. Returns the input locator.
+
+```java
+public Locator getAriaLabelLocator()
+```
+
+### getEnabledLocator
+
+Get the locator for enabled/disabled state. Returns the input locator.
+
+```java
+public Locator getEnabledLocator()
+```
+
+## Inherited Methods
+
+From `HasValueElement`:
+- `getValue()` - Get current value
+- `setValue(String value)` - Set field value
+- `clear()` - Clear the value
+- `assertValue(String value)` - Assert value matches
+- `getInputLocator()` - Get input element locator
+
+From `HasValidationPropertiesElement`:
+- `assertValid()` - Assert field is valid
+- `assertInvalid()` - Assert field is invalid
+- `assertErrorMessage(String message)` - Assert error message text
+- `getErrorMessageLocator()` - Get error message locator
+
+From `HasClearButtonElement`:
+- `clickClearButton()` - Click the clear button
+- `isClearButtonVisible()` - Check if clear button is visible
+- `assertClearButtonVisible()` - Assert clear button is visible
+- `assertClearButtonNotVisible()` - Assert clear button is not visible
+
+From `HasPlaceholderElement`:
+- `getPlaceholder()` - Get placeholder text
+- `setPlaceholder(String placeholder)` - Set placeholder text
+- `assertPlaceholder(String placeholder)` - Assert placeholder matches
+
+From `FocusableElement`:
+- `focus()` - Focus the field
+- `blur()` - Blur the field
+- `getTabIndex()` - Get tab index
+- `assertIsFocused()` - Assert field has focus
+- `assertIsNotFocused()` - Assert field does not have focus
+
+From `HasLabelElement`:
+- `getLabel()` - Get label text
+- `assertLabel(String label)` - Assert label text
+- `getLabelLocator()` - Get label locator
+
+From `HasHelperElement`:
+- `getHelperText()` - Get helper text
+- `assertHelperHasText(String text)` - Assert helper text
+- `getHelperLocator()` - Get helper locator
+
+## Complete Example
+
+```java
+@Test
+public void testTextFieldValidation() {
+    // Find text field by label
+    TextFieldElement textField = TextFieldElement.getByLabel(page, "Validated Textfield");
+    textField.assertVisible();
+    
+    // Check validation constraints
+    textField.assertMinLength(6);
+    textField.assertMaxLength(7);
+    textField.assertPattern("\\d{7}");
+    textField.assertAllowedCharPattern("[0-8]");
+    
+    // Test invalid value
+    textField.setValue("1");
+    textField.assertInvalid();
+    textField.assertErrorMessage("Minimum length is 6 characters");
+    
+    // Test valid value
+    textField.setValue("1238456");
+    textField.assertValid();
+    textField.assertValue("1238456");
+}
+
+@Test
+public void testTextFieldInteractions() {
+    TextFieldElement textField = TextFieldElement.getByLabel(page, "TextField with placeholder and clear button");
+    
+    // Check placeholder
+    textField.assertPlaceholder("Enter text here");
+    
+    // Test clear button
+    textField.assertClearButtonNotVisible();
+    textField.setValue("some value");
+    textField.assertClearButtonVisible();
+    textField.clickClearButton();
+    textField.assertValue("");
+    
+    // Test prefix and suffix
+    textField.assertPrefixHasText("Prefix");
+    textField.assertSuffixHasText("Suffix");
+}
+```

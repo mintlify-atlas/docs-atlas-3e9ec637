@@ -1,0 +1,134 @@
+---
+title: HasAriaLabelElement
+description: Mixin interface for components exposing an ARIA label
+---
+
+## Overview
+
+`HasAriaLabelElement` is a mixin interface for Vaadin components that expose an ARIA label attribute. This interface provides methods to retrieve and assert `aria-label` attributes for accessibility testing.
+
+## Methods
+
+### getAriaLabelLocator
+
+```java
+default Locator getAriaLabelLocator()
+```
+
+Returns the locator where the `aria-label` attribute is applied. By default, this returns the component's root locator.
+
+**Returns:** The locator for the element containing the aria-label attribute (defaults to root)
+
+---
+
+### getAriaLabel
+
+```java
+default String getAriaLabel()
+```
+
+Gets the current `aria-label` attribute value.
+
+**Returns:** The value of the `aria-label` attribute, or null if not present
+
+---
+
+### assertAriaLabel
+
+```java
+default void assertAriaLabel(String ariaLabel)
+```
+
+Asserts that the `aria-label` attribute matches the expected text. When `null` is passed, asserts that the aria-label attribute is absent.
+
+<ParamField path="ariaLabel" type="String">
+  The expected aria-label value, or null to assert the attribute is absent
+</ParamField>
+
+## Implementation Details
+
+This interface extends `HasLocatorElement` and provides default implementations for all methods.
+
+The `assertAriaLabel()` method behavior:
+- When a value is provided: asserts the `aria-label` attribute matches exactly
+- When `null` is passed: asserts the `aria-label` attribute is not present on the element
+
+The `getAriaLabelLocator()` method can be overridden by implementing classes if the aria-label is applied to a child element rather than the root.
+
+## Implementing Classes
+
+This interface is implemented by:
+
+### Interactive Components
+- `ButtonElement`
+- `CheckboxElement`
+- `RadioButtonElement`
+
+### Selection Components
+- `ComboBoxElement`
+- `MultiSelectComboBoxElement`
+- `SelectElement`
+- `ListBoxElement`
+
+### Navigation & Menu Components
+- `MenuBarElement`
+- `MenuElement`
+- `MenuItemElement`
+
+### Other Components
+- `PopoverElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+
+// Get a button by text
+ButtonElement closeButton = ButtonElement.getByText(page, "×");
+
+// Get the aria-label
+String ariaLabel = closeButton.getAriaLabel();
+System.out.println("ARIA label: " + ariaLabel);
+
+// Assert the aria-label for accessibility
+closeButton.assertAriaLabel("Close dialog");
+```
+
+## Accessibility Testing Example
+
+```java
+import org.vaadin.addons.dramafinder.element.MenuBarElement;
+import org.vaadin.addons.dramafinder.element.ComboBoxElement;
+
+// Test menu bar accessibility
+MenuBarElement menuBar = MenuBarElement.getByAriaLabel(page, "Main navigation");
+menuBar.assertAriaLabel("Main navigation");
+
+// Test combo box with aria-label (when label is not visible)
+ComboBoxElement country = ComboBoxElement.getByAriaLabel(page, "Select country");
+country.assertAriaLabel("Select country");
+country.setValue("United States");
+
+// Assert aria-label is not present when not needed
+ButtonElement regularButton = ButtonElement.getByText(page, "Submit");
+regularButton.assertAriaLabel(null);
+```
+
+## Testing Icon-Only Buttons
+
+```java
+// In your Vaadin application
+Button deleteButton = new Button(new Icon(VaadinIcon.TRASH));
+deleteButton.setAriaLabel("Delete item");
+
+// In your test
+ButtonElement deleteBtn = ButtonElement.getByAriaLabel(page, "Delete item");
+deleteBtn.assertAriaLabel("Delete item");
+deleteBtn.click();
+```
+
+## See Also
+
+- [ARIA Label - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-label)
+- [ButtonElement](/api/button) - Example implementation with ARIA support
+- [Web Accessibility Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)

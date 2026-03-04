@@ -1,0 +1,284 @@
+---
+title: AvatarElement
+description: Playwright element wrapper for Vaadin Avatar component
+---
+
+# AvatarElement
+
+Playwright element wrapper for `<vaadin-avatar>` providing helpers to read and modify avatar properties (name, abbreviation, image, color index).
+
+## Component Tag
+
+`vaadin-avatar`
+
+## Implements
+
+- `FocusableElement` - Focus management
+- `HasStyleElement` - CSS class and style management
+- `HasThemeElement` - Theme variant support
+- `HasTooltipElement` - Tooltip text
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-avatar>` element
+</ParamField>
+
+## Static Factory Methods
+
+### get
+
+Get the first avatar on the page or within a scope.
+
+```java
+AvatarElement.get(Page page)
+AvatarElement.get(Locator locator)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="locator" type="Locator">
+  Scope containing the avatar
+</ParamField>
+
+### getByName
+
+Get an avatar by its name attribute.
+
+```java
+AvatarElement.getByName(Page page, String name)
+AvatarElement.getByName(Locator locator, String name)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="locator" type="Locator">
+  Scope containing the avatar
+</ParamField>
+
+<ParamField path="name" type="String">
+  Avatar's name attribute value
+</ParamField>
+
+## Property Methods
+
+### getName
+
+Get the avatar's name.
+
+```java
+String getName()
+```
+
+Returns the name, or null if not set.
+
+### setName
+
+Set the avatar's name.
+
+```java
+void setName(String name)
+```
+
+<ParamField path="name" type="String">
+  Name to set
+</ParamField>
+
+### getAbbreviation
+
+Get the displayed abbreviation.
+
+```java
+String getAbbreviation()
+```
+
+Returns the abbreviation, or null if not set.
+
+### setAbbreviation
+
+Set the abbreviation.
+
+```java
+void setAbbreviation(String abbr)
+```
+
+<ParamField path="abbr" type="String">
+  Abbreviation to display
+</ParamField>
+
+### getImage
+
+Get the image URL.
+
+```java
+String getImage()
+```
+
+Returns the image URL, or null if not set.
+
+### setImage
+
+Set the image URL.
+
+```java
+void setImage(String img)
+```
+
+<ParamField path="img" type="String">
+  Image URL to set
+</ParamField>
+
+### getColorIndex
+
+Get the background color index.
+
+```java
+Integer getColorIndex()
+```
+
+Returns the color index, or null if not set.
+
+### setColorIndex
+
+Set the background color index.
+
+```java
+void setColorIndex(int colorIndex)
+```
+
+<ParamField path="colorIndex" type="int">
+  Color index to set
+</ParamField>
+
+## Assertion Methods
+
+### assertName
+
+Assert the avatar's name property value.
+
+```java
+void assertName(String name)
+```
+
+<ParamField path="name" type="String">
+  Expected name
+</ParamField>
+
+### assertAbbreviation
+
+Assert the avatar's abbreviation.
+
+```java
+void assertAbbreviation(String abbr)
+```
+
+<ParamField path="abbr" type="String">
+  Expected abbreviation
+</ParamField>
+
+### assertHasImage
+
+Assert that the avatar has an image set.
+
+```java
+void assertHasImage()
+```
+
+### assertHasNoImage
+
+Assert that the avatar has no image set.
+
+```java
+void assertHasNoImage()
+```
+
+## Usage Examples
+
+### Get Avatar and Check Properties
+
+```java
+AvatarElement avatar = AvatarElement.get(page);
+avatar.assertVisible();
+
+String name = avatar.getName();
+assertEquals("John Doe", name);
+
+String abbr = avatar.getAbbreviation();
+assertEquals("JD", abbr);
+```
+
+### Find Avatar by Name
+
+```java
+AvatarElement avatar = AvatarElement.getByName(page, "Jane Smith");
+avatar.assertName("Jane Smith");
+avatar.assertAbbreviation("JS");
+```
+
+### Set Avatar Properties
+
+```java
+AvatarElement avatar = AvatarElement.get(page);
+
+avatar.setName("Alice Cooper");
+avatar.assertName("Alice Cooper");
+
+avatar.setAbbreviation("AC");
+avatar.assertAbbreviation("AC");
+
+avatar.setColorIndex(3);
+assertEquals(3, avatar.getColorIndex());
+```
+
+### Work with Avatar Image
+
+```java
+AvatarElement avatar = AvatarElement.get(page);
+
+// Check if image is set
+if (avatar.getImage() != null) {
+    avatar.assertHasImage();
+} else {
+    avatar.assertHasNoImage();
+}
+
+// Set image
+avatar.setImage("https://example.com/avatar.jpg");
+avatar.assertHasImage();
+assertEquals("https://example.com/avatar.jpg", avatar.getImage());
+```
+
+### Avatar with Theme
+
+```java
+AvatarElement avatar = AvatarElement.get(page);
+avatar.assertTheme("xlarge");
+```
+
+### Avatar with Tooltip
+
+```java
+AvatarElement avatar = AvatarElement.getByName(page, "John Doe");
+avatar.assertTooltipHasText("User profile");
+```
+
+### Focus Avatar
+
+```java
+AvatarElement avatar = AvatarElement.get(page);
+avatar.focus();
+avatar.assertIsFocused();
+```
+
+### Scoped Avatar Lookup
+
+```java
+// Find avatar within a card
+CardElement card = CardElement.getByTitle(page, "User Profile");
+AvatarElement avatar = AvatarElement.get(card.getLocator());
+avatar.assertName("Profile User");
+```

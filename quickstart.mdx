@@ -1,80 +1,412 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get started with Drama Finder in minutes with real examples
 ---
 
-## Get started in three steps
+This guide walks you through creating your first Playwright tests for Vaadin components using Drama Finder.
 
-Get your documentation site running locally and make your first customization.
+## Basic Test Setup
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Create a base test class">
+    Extend `AbstractBasePlaywrightIT` to set up Playwright for your tests:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```java
+    package com.example.tests;
 
-### Step 2: Deploy your changes
+    import org.springframework.boot.test.context.SpringBootTest;
+    import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+    import org.springframework.boot.test.web.server.LocalServerPort;
+    import org.vaadin.addons.dramafinder.AbstractBasePlaywrightIT;
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+    @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+    public abstract class BaseIT extends AbstractBasePlaywrightIT {
+
+        @LocalServerPort
+        private int port;
+
+        @Override
+        public String getUrl() {
+            return String.format("http://localhost:%d/", port);
+        }
+    }
+    ```
+
+    <Note>
+    The `AbstractBasePlaywrightIT` class handles browser lifecycle, page setup, and Vaadin synchronization automatically.
+    </Note>
+  </Step>
+
+  <Step title="Write your first test">
+    Create a test class for a simple form:
+
+    ```java
+    package com.example.tests;
+
+    import org.junit.jupiter.api.Test;
+    import org.springframework.boot.test.context.SpringBootTest;
+    import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+    import org.vaadin.addons.dramafinder.element.TextFieldElement;
+
+    @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+    public class SimpleExampleIT extends BaseIT {
+
+        @Test
+        public void testTooltip() {
+            // Get a text field by its accessible label
+            TextFieldElement textfield = TextFieldElement.getByLabel(page, "Textfield");
+            
+            // Assert that it's visible
+            textfield.assertVisible();
+            
+            // Assert that the textfield has a tooltip
+            textfield.assertTooltipHasText("Tooltip for textfield");
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Run the test">
+    Execute your integration test:
+
+    ```bash
+    mvn -Dit.test=SimpleExampleIT verify
+    ```
+  </Step>
+</Steps>
+
+## Working with Text Fields
+
+Drama Finder provides comprehensive support for Vaadin text fields with intuitive methods:
+
+<CodeGroup>
+```java Basic Operations
+// Find by label
+TextFieldElement textfield = TextFieldElement.getByLabel(page, "Username");
+
+// Assert visibility
+textfield.assertVisible();
+
+// Set and verify value
+textfield.setValue("john.doe");
+textfield.assertValue("john.doe");
+
+// Clear the field
+textfield.clear();
+textfield.assertValue("");
+```
+
+```java Validation
+// Test required field validation
+TextFieldElement textfield = TextFieldElement.getByLabel(page, "Email");
+textfield.setValue("");
+textfield.assertInvalid();
+
+assertThat(textfield.getErrorMessageLocator()).hasText("Field is required");
+
+// Test pattern validation
+TextFieldElement codeField = TextFieldElement.getByLabel(page, "Validated Textfield");
+codeField.setValue("123");
+codeField.assertInvalid();
+codeField.assertErrorMessage("Minimum length is 6 characters");
+
+codeField.setValue("1238456");
+codeField.assertValid();
+```
+
+```java Attributes and Properties
+TextFieldElement textfield = TextFieldElement.getByLabel(page, "Validated Textfield");
+
+// Verify attributes
+textfield.assertPattern("\\d{7}");
+textfield.assertMinLength(6);
+textfield.assertMaxLength(7);
+textfield.assertAllowedCharPattern("[0-8]");
+
+// Get attribute values
+String pattern = textfield.getPattern();
+Integer minLength = textfield.getMinLength();
+Integer maxLength = textfield.getMaxLength();
+```
+
+```java Helper Text and Components
+TextFieldElement textfield = TextFieldElement.getByLabel(page, "Textfield");
+
+// Verify helper text
+textfield.assertHelperHasText("Helper text");
+String helperText = textfield.getHelperText();
+
+// Access helper component
+TextFieldElement fieldWithHelper = TextFieldElement.getByLabel(page, "TextField with helper component");
+TextFieldElement helperComponent = new TextFieldElement(fieldWithHelper.getHelperLocator());
+helperComponent.assertVisible();
+helperComponent.assertHelperHasText("Internal helper");
+```
+</CodeGroup>
+
+## Working with Buttons
+
+Button elements support finding by text and provide assertion methods:
+
+```java
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
+// Find button by text
+ButtonElement button = ButtonElement.getByText(page, "Click me");
+
+// Assert enabled/disabled state
+button.assertEnabled();
+
+// Click and verify result
+button.click();
+assertThat(page.getByText("Button clicked!")).isVisible();
+
+// Check theme
+ButtonElement saveButton = ButtonElement.getByText(page, "Save");
+saveButton.assertTheme("success");
+
+// Verify CSS classes
+button.assertCssClass("custom-button");
+
+// Test focus
+button.focus();
+button.assertIsFocused();
+```
+
+## Working with Grids
+
+Drama Finder provides powerful Grid testing capabilities:
+
+<CodeGroup>
+```java Basic Grid Operations
+import org.vaadin.addons.dramafinder.element.GridElement;
+
+// Find grid by ID
+GridElement grid = GridElement.getById(page, "basic-grid");
+grid.assertVisible();
+
+// Verify row and column counts
+int totalRows = grid.getTotalRowCount();
+int visibleRows = grid.getRenderedRowCount();
+int columns = grid.getColumnCount();
+```
+
+```java Headers and Cells
+// Get header text
+List<String> headers = grid.getHeaderCellContents();
+// Returns: ["First Name", "Last Name", "Email"]
+
+// Access specific cells
+var firstCell = grid.findCell(0, 0);  // row 0, column 0
+assertThat(firstCell.get().getCellContentLocator()).hasText("First1");
+
+// Find cell by header text
+var emailCell = grid.findCell(0, "Email");
+assertThat(emailCell.get().getCellContentLocator()).hasText("person1@example.com");
+```
+
+```java Lazy Loading
+// Test lazy-loaded grid
+GridElement lazyGrid = GridElement.getById(page, "lazy-grid");
+assertEquals(10000, lazyGrid.getTotalRowCount());
+
+// Scroll to distant row
+var row = lazyGrid.findRow(9000);
+assertThat(row.get().getCell(0).getCellContentLocator()).hasText("First9001");
+```
+</CodeGroup>
+
+## Common Assertions
+
+All Drama Finder elements support common assertions:
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Username");
+
+// Visibility
+field.assertVisible();
+field.assertHidden();
+
+// Enabled/Disabled
+field.assertEnabled();
+field.assertDisabled();
+
+// Focus
+field.assertIsFocused();
+field.assertIsNotFocused();
+
+// ARIA attributes
+field.assertAriaLabel("Username field");
+
+// Theme
+field.assertTheme("small");
+
+// CSS classes
+field.assertCssClass("custom-field");
+
+// Prefix and suffix
+field.assertPrefixHasText("$");
+field.assertSuffixHasText("USD");
+```
+
+## Element Locators
+
+Drama Finder provides access to internal locators for advanced scenarios:
+
+```java
+TextFieldElement textfield = TextFieldElement.getByLabel(page, "Search");
+
+// Component root locator
+Locator root = textfield.getLocator();
+
+// Input element locator
+Locator input = textfield.getInputLocator();
+
+// Helper text locator
+Locator helper = textfield.getHelperLocator();
+
+// Error message locator
+Locator error = textfield.getErrorMessageLocator();
+
+// Prefix and suffix locators
+Locator prefix = textfield.getPrefixLocator();
+Locator suffix = textfield.getSuffixLocator();
+
+// Use with Playwright assertions
+assertThat(input).hasAttribute("placeholder", "Enter search term");
+assertThat(helper).hasText("Search by name or email");
+```
+
+## Factory Methods
+
+Elements provide flexible factory methods for different lookup strategies:
+
+<CodeGroup>
+```java By Label (Page-level)
+// Find by accessible label on the page
+TextFieldElement field = TextFieldElement.getByLabel(page, "Email");
+ButtonElement button = ButtonElement.getByText(page, "Submit");
+```
+
+```java By Label (Scoped)
+// Find within a specific container
+Locator form = page.locator("#user-form");
+TextFieldElement field = TextFieldElement.getByLabel(form, "Email");
+ButtonElement button = ButtonElement.getByText(form, "Submit");
+```
+
+```java By ID
+// Find grid by element ID
+GridElement grid = GridElement.getById(page, "users-grid");
+```
+
+```java By Locator
+// Wrap an existing locator
+Locator existingLocator = page.locator("vaadin-text-field").first();
+TextFieldElement field = new TextFieldElement(existingLocator);
+```
+</CodeGroup>
+
+## Testing Patterns
+
+<Accordion title="Pattern: Testing Form Validation">
+  ```java
+  @Test
+  public void testFormValidation() {
+      TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+      TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+      ButtonElement submit = ButtonElement.getByText(page, "Register");
+
+      // Empty form should be invalid
+      submit.click();
+      email.assertInvalid();
+      password.assertInvalid();
+
+      // Fill with valid data
+      email.setValue("user@example.com");
+      password.setValue("SecurePass123");
+      
+      email.assertValid();
+      password.assertValid();
+      
+      submit.click();
+      assertThat(page.getByText("Registration successful")).isVisible();
+  }
+  ```
 </Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Accordion title="Pattern: Testing Dynamic Content">
+  ```java
+  @Test
+  public void testDynamicContent() {
+      ButtonElement loadButton = ButtonElement.getByText(page, "Load Data");
+      GridElement grid = GridElement.getById(page, "data-grid");
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+      // Initially empty
+      assertEquals(0, grid.getTotalRowCount());
 
-### Step 3: Go live
+      // Load data
+      loadButton.click();
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
+      // Verify data loaded
+      assertTrue(grid.getTotalRowCount() > 0);
+      var firstCell = grid.findCell(0, "Name");
+      assertThat(firstCell.get().getCellContentLocator()).not().isEmpty();
+  }
+  ```
 </Accordion>
 
-## Next steps
+<Accordion title="Pattern: Testing Clear Button">
+  ```java
+  @Test
+  public void testClearButton() {
+      TextFieldElement field = TextFieldElement.getByLabel(page, "Search");
+      
+      // Clear button hidden when empty
+      field.assertClearButtonNotVisible();
+      
+      // Clear button appears with content
+      field.setValue("search term");
+      field.assertClearButtonVisible();
+      
+      // Clear removes content
+      field.clickClearButton();
+      field.assertValue("");
+      field.assertClearButtonNotVisible();
+  }
+  ```
+</Accordion>
 
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+## Best Practices
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+**Key recommendations for writing Drama Finder tests:**
+
+1. **Use accessible names**: Prefer `getByLabel()` and `getByText()` over CSS selectors
+2. **Wait automatically**: Drama Finder assertions auto-retry, avoiding flaky tests
+3. **Scope your lookups**: Use scoped factory methods when testing complex layouts
+4. **Test validation states**: Always verify both valid and invalid states
+5. **Use assertion methods**: Prefer `assertVisible()` over raw Playwright assertions when available
 </Note>
+
+<Tip>
+Drama Finder automatically handles Vaadin's shadow DOM and component lifecycle, so you don't need to add manual waits or complex selectors.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Element Reference" icon="book" href="/elements">
+    Explore all available element types and methods
+  </Card>
+  <Card title="Testing Patterns" icon="code" href="/patterns">
+    Learn advanced testing patterns and best practices
+  </Card>
+  <Card title="API Documentation" icon="file-code" href="/api">
+    View complete API reference
+  </Card>
+  <Card title="GitHub Examples" icon="github" href="https://github.com/parttio/dramafinder/tree/main/src/test/java">
+    Browse real-world test examples
+  </Card>
+</CardGroup>

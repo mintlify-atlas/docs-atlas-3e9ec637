@@ -1,0 +1,385 @@
+---
+title: ComboBoxElement
+description: Playwright element wrapper for Vaadin ComboBox component
+---
+
+# ComboBoxElement
+
+Playwright element wrapper for `<vaadin-combo-box>`. Provides helpers to open the overlay, filter items, and pick items by visible text, along with aria/placeholder/validation mixins.
+
+## Component Tag
+
+`vaadin-combo-box`
+
+## Implements
+
+- `FocusableElement`
+- `HasAriaLabelElement`
+- `HasInputFieldElement`
+- `HasPrefixElement`
+- `HasThemeElement`
+- `HasPlaceholderElement`
+- `HasEnabledElement`
+- `HasTooltipElement`
+- `HasValidationPropertiesElement`
+- `HasClearButtonElement`
+- `HasAllowedCharPatternElement`
+
+## Factory Methods
+
+### getByLabel (Page)
+
+```java
+public static ComboBoxElement getByLabel(Page page, String label)
+```
+
+Get the `ComboBoxElement` by its label. Uses ARIA role `COMBOBOX`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `ComboBoxElement`
+
+### getByLabel (Locator)
+
+```java
+public static ComboBoxElement getByLabel(Locator locator, String label)
+```
+
+Get the `ComboBoxElement` by its label within a given scope.
+
+<ParamField path="locator" type="Locator" required>
+  The locator to search within
+</ParamField>
+
+<ParamField path="label" type="String" required>
+  The accessible label of the field
+</ParamField>
+
+**Returns:** The matching `ComboBoxElement`
+
+## Constructor
+
+### ComboBoxElement
+
+```java
+public ComboBoxElement(Locator locator)
+```
+
+Create a new `ComboBoxElement`.
+
+<ParamField path="locator" type="Locator" required>
+  The locator for the `<vaadin-combo-box>` element
+</ParamField>
+
+## Methods
+
+### selectItem
+
+```java
+public void selectItem(String item)
+```
+
+Select an item by its visible label. Opens the overlay and clicks the matching item.
+
+<ParamField path="item" type="String" required>
+  Label of the item to select
+</ParamField>
+
+### filterAndSelectItem
+
+```java
+public void filterAndSelectItem(String filter, String item)
+```
+
+Type filter text into the input, then click the matching item.
+
+<ParamField path="filter" type="String" required>
+  Text to type for filtering
+</ParamField>
+
+<ParamField path="item" type="String" required>
+  Label of the item to select
+</ParamField>
+
+### setFilter
+
+```java
+public void setFilter(String filter)
+```
+
+Type into the input to trigger filtering. Uses `pressSequentially` to fire keyboard events that the ComboBox listens to for filtering.
+
+<ParamField path="filter" type="String" required>
+  The filter text
+</ParamField>
+
+### getFilter
+
+```java
+public String getFilter()
+```
+
+Get the current filter value from the DOM property.
+
+**Returns:** The current filter string
+
+### open
+
+```java
+public void open()
+```
+
+Open the combo box overlay.
+
+### close
+
+```java
+public void close()
+```
+
+Close the combo box overlay.
+
+### isOpened
+
+```java
+public boolean isOpened()
+```
+
+Check whether the overlay is currently open.
+
+**Returns:** `true` when the overlay is open
+
+### assertOpened
+
+```java
+public void assertOpened()
+```
+
+Assert that the combo box overlay is open.
+
+### assertClosed
+
+```java
+public void assertClosed()
+```
+
+Assert that the combo box overlay is closed.
+
+### getValue
+
+```java
+@Override
+public String getValue()
+```
+
+Get the selected value label. ComboBox stores an index in its `value` property, so this reads the displayed text from the input element instead.
+
+**Returns:** The displayed value or empty string when nothing is selected
+
+### assertValue
+
+```java
+@Override
+public void assertValue(String expected)
+```
+
+Assert that the displayed value equals the expected string.
+
+<ParamField path="expected" type="String">
+  Expected label or empty string for no selection
+</ParamField>
+
+### isReadOnly
+
+```java
+public boolean isReadOnly()
+```
+
+Check whether the combo box is read-only.
+
+**Returns:** `true` when read-only
+
+### assertReadOnly
+
+```java
+public void assertReadOnly()
+```
+
+Assert that the combo box is read-only.
+
+### assertNotReadOnly
+
+```java
+public void assertNotReadOnly()
+```
+
+Assert that the combo box is not read-only.
+
+### getToggleButtonLocator
+
+```java
+public Locator getToggleButtonLocator()
+```
+
+Get locator for the toggle button part.
+
+**Returns:** Locator for the toggle button
+
+### clickToggleButton
+
+```java
+public void clickToggleButton()
+```
+
+Click the dropdown toggle button.
+
+### getOverlayItemCount
+
+```java
+public int getOverlayItemCount()
+```
+
+Count visible overlay items.
+
+**Returns:** The number of visible items
+
+### assertItemCount
+
+```java
+public void assertItemCount(int expected)
+```
+
+Assert that the overlay contains exactly the expected number of items.
+
+<ParamField path="expected" type="int" required>
+  Expected item count
+</ParamField>
+
+### getFocusLocator
+
+```java
+@Override
+public Locator getFocusLocator()
+```
+
+Get the locator to use for focus operations.
+
+**Returns:** The input locator
+
+### getAriaLabelLocator
+
+```java
+@Override
+public Locator getAriaLabelLocator()
+```
+
+Get the locator for ARIA label.
+
+**Returns:** The input locator
+
+### getEnabledLocator
+
+```java
+@Override
+public Locator getEnabledLocator()
+```
+
+Get the locator to use for enabled/disabled checks.
+
+**Returns:** The input locator
+
+## Usage Examples
+
+### Basic Selection
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Sort by");
+comboBox.assertVisible();
+comboBox.selectItem("Rating: high to low");
+comboBox.assertValue("Rating: high to low");
+```
+
+### Filter and Select
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Filterable ComboBox");
+comboBox.filterAndSelectItem("Apr", "Apricot");
+comboBox.assertValue("Apricot");
+```
+
+### Open/Close Overlay
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Filterable ComboBox");
+comboBox.assertClosed();
+comboBox.open();
+comboBox.assertOpened();
+comboBox.close();
+comboBox.assertClosed();
+```
+
+### Item Count
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Filterable ComboBox");
+comboBox.open();
+comboBox.assertItemCount(9);
+comboBox.close();
+```
+
+### Clear Selection
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "ComboBox with placeholder and clear button");
+comboBox.selectItem("Most recent first");
+comboBox.assertValue("Most recent first");
+comboBox.clickClearButton();
+comboBox.assertValue("");
+```
+
+### Read-Only State
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Read-only ComboBox");
+comboBox.assertVisible();
+comboBox.assertReadOnly();
+comboBox.assertValue("Banana");
+```
+
+### Validation
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "ComboBox with theme");
+comboBox.assertValid();
+ButtonElement.getByText(page, "Validate").click();
+comboBox.assertInvalid();
+assertThat(comboBox.getErrorMessageLocator()).hasText("Required field");
+```
+
+### Lazy Loading with Filter
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Lazy ComboBox");
+comboBox.filterAndSelectItem("Item 250", "Item 250");
+comboBox.assertValue("Item 250");
+
+// Verify filtering narrows results
+comboBox.setFilter("Item 500");
+comboBox.assertItemCount(1);
+comboBox.close();
+```
+
+### Custom Value Entry
+
+```java
+ComboBoxElement comboBox = ComboBoxElement.getByLabel(page, "Custom value ComboBox");
+comboBox.getInputLocator().fill("Custom entry");
+comboBox.getInputLocator().press("Enter");
+assertThat(page.locator("#custom-value-display")).hasText("Custom entry");
+```

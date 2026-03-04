@@ -1,0 +1,248 @@
+---
+title: HasClearButtonElement
+description: Mixin interface for components with a clear button part
+---
+
+## Overview
+
+`HasClearButtonElement` provides methods for interacting with the clear button that appears in Vaadin input components. The clear button allows users to quickly remove all input from a field, and this interface enables testing of that functionality.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.HasClearButtonElement`
+
+## Methods
+
+### getClearButtonLocator()
+
+```java
+default Locator getClearButtonLocator()
+```
+
+Returns a locator for the clear button element using the `part~="clear-button"` selector.
+
+**Returns:** `Locator` - Locator for the clear button part
+
+---
+
+### clickClearButton()
+
+```java
+default void clickClearButton()
+```
+
+Clicks the clear button to remove the field's value.
+
+---
+
+### isClearButtonVisible()
+
+```java
+default boolean isClearButtonVisible()
+```
+
+Checks whether the clear button is currently visible. The clear button is typically only visible when the field has a value.
+
+**Returns:** `boolean` - `true` if the clear button is visible, `false` otherwise
+
+---
+
+### assertClearButtonVisible()
+
+```java
+default void assertClearButtonVisible()
+```
+
+Asserts that the clear button is visible.
+
+**Throws:** `AssertionError` if the clear button is not visible
+
+---
+
+### assertClearButtonNotVisible()
+
+```java
+default void assertClearButtonNotVisible()
+```
+
+Asserts that the clear button is not visible.
+
+**Throws:** `AssertionError` if the clear button is visible
+
+## Implementing Classes
+
+The following element classes implement `HasClearButtonElement`:
+
+- `TextFieldElement` (and all subclasses: `TextAreaElement`, `PasswordFieldElement`, `EmailFieldElement`)
+- `AbstractNumberFieldElement` (and its subclasses: `NumberFieldElement`, `IntegerFieldElement`, `BigDecimalFieldElement`)
+- All text input components that support the clear button feature
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import com.microsoft.playwright.Page;
+
+public class ClearButtonTest {
+    void testClearButton(Page page) {
+        TextFieldElement searchField = TextFieldElement.getByLabel(page, "Search");
+        
+        // Initially empty - clear button not visible
+        searchField.assertClearButtonNotVisible();
+        
+        // Enter text - clear button appears
+        searchField.setValue("test query");
+        searchField.assertClearButtonVisible();
+        
+        // Click clear button
+        searchField.clickClearButton();
+        
+        // Field is now empty
+        searchField.assertValue("");
+        searchField.assertClearButtonNotVisible();
+    }
+}
+```
+
+## Implementation Details
+
+### Part Selector
+
+The clear button is located using Vaadin's `part` attribute system, which allows targeting internal parts of a shadow DOM component:
+
+```java
+getLocator().locator("[part~=\"clear-button\"]")
+```
+
+The `~=` attribute selector matches when `part` contains the word "clear-button" in its space-separated list of values.
+
+### Clear Button Behavior
+
+In Vaadin components:
+- The clear button is automatically hidden when the field is empty
+- It appears when the field has any value
+- Clicking it clears the field and hides the button again
+- The clear button can be disabled via the `clear-button-visible` property
+
+## Testing Patterns
+
+### Test Clear Button Visibility
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Name");
+
+// Empty field - no clear button
+field.assertValue("");
+field.assertClearButtonNotVisible();
+
+// Field with value - clear button appears
+field.setValue("John");
+field.assertClearButtonVisible();
+```
+
+### Test Clear Functionality
+
+```java
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+
+email.setValue("user@example.com");
+email.assertValue("user@example.com");
+
+// Use clear button instead of programmatic clear
+email.clickClearButton();
+
+email.assertValue("");
+email.assertClearButtonNotVisible();
+```
+
+### Test Clear Button in Search Flow
+
+```java
+TextFieldElement search = TextFieldElement.getByLabel(page, "Search");
+
+// Enter search term
+search.setValue("widgets");
+page.waitForSelector(".search-result");
+
+// Clear search
+search.clickClearButton();
+
+// Verify results are cleared or reset
+assertThat(page.locator(".search-result")).not().isVisible();
+```
+
+### Test Clear Button with Validation
+
+```java
+TextFieldElement required = TextFieldElement.getByLabel(page, "Required Field");
+
+required.setValue("test");
+required.assertValid();
+
+// Clearing via button should trigger validation
+required.clickClearButton();
+required.assertInvalid();
+required.assertErrorMessage("This field is required");
+```
+
+### Test Clear Button Accessibility
+
+```java
+TextFieldElement field = TextFieldElement.getByLabel(page, "Input");
+
+field.setValue("test");
+
+// Verify clear button can be focused and activated with keyboard
+Locator clearButton = field.getClearButtonLocator();
+clearButton.focus();
+assertThat(clearButton).isFocused();
+
+// Press Enter to activate
+page.keyboard().press("Enter");
+field.assertValue("");
+```
+
+## Best Practices
+
+### Use Clear Button for User Simulation
+
+When testing user workflows, prefer using `clickClearButton()` over programmatic `clear()` to better simulate real user interaction:
+
+```java
+// Better: Simulates user clicking clear button
+field.clickClearButton();
+
+// Less realistic: Direct programmatic clear
+field.clear();
+```
+
+### Check Visibility Before Clicking
+
+Always verify the clear button is visible before attempting to click it:
+
+```java
+if (field.isClearButtonVisible()) {
+    field.clickClearButton();
+}
+```
+
+Or use assertions:
+
+```java
+field.assertClearButtonVisible();
+field.clickClearButton();
+```
+
+### Test Clear Button Disabled State
+
+Some implementations may allow disabling the clear button. Test this if applicable:
+
+```java
+// When clear-button-visible is set to false
+field.setValue("test");
+field.assertClearButtonNotVisible();
+```
+
+## Related Interfaces
+
+- [HasValueElement](/api/shared/has-value) - Provides the `clear()` method for programmatic clearing
+- [HasInputFieldElement](/api/shared/has-input-field) - Parent interface for input fields with clear buttons
+- [HasPlaceholderElement](/api/shared/has-placeholder) - Often used together to guide users

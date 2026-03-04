@@ -1,0 +1,185 @@
+---
+title: CardElement
+description: Playwright element wrapper for Vaadin Card component
+---
+
+# CardElement
+
+Playwright element wrapper for `<vaadin-card>` exposing slot-aware accessors for title, subtitle, header/footer, media, and content areas.
+
+## Component Tag
+
+`vaadin-card`
+
+## Implements
+
+- `HasThemeElement` - Theme variant support
+- `HasStyleElement` - CSS class and style management
+
+## Constructor
+
+<ParamField path="locator" type="Locator" required>
+  Playwright locator for the `<vaadin-card>` element
+</ParamField>
+
+## Static Factory Methods
+
+### getByTitle
+
+Get a card by its title text.
+
+```java
+CardElement.getByTitle(Page page, String title)
+CardElement.getByTitle(Locator locator, String title)
+```
+
+<ParamField path="page" type="Page">
+  Playwright page
+</ParamField>
+
+<ParamField path="locator" type="Locator">
+  Scope to search within
+</ParamField>
+
+<ParamField path="title" type="String">
+  Card's title text (matches slot="title" content)
+</ParamField>
+
+## Slot Locators
+
+### getTitleLocator
+
+Locator for the title slot (`slot="title"`).
+
+```java
+Locator getTitleLocator()
+```
+
+### getSubtitleLocator
+
+Locator for the subtitle slot (`slot="subtitle"`).
+
+```java
+Locator getSubtitleLocator()
+```
+
+### getHeaderLocator
+
+Locator for the header slot (`slot="header"`).
+
+```java
+Locator getHeaderLocator()
+```
+
+### getHeaderPrefixLocator
+
+Locator for the header prefix slot (`slot="header-prefix"`).
+
+```java
+Locator getHeaderPrefixLocator()
+```
+
+### getHeaderSuffixLocator
+
+Locator for the header suffix slot (`slot="header-suffix"`).
+
+```java
+Locator getHeaderSuffixLocator()
+```
+
+### getMediaLocator
+
+Locator for the media slot (`slot="media"`).
+
+```java
+Locator getMediaLocator()
+```
+
+### getFooterLocator
+
+Locator for the footer slot (`slot="footer"`).
+
+```java
+Locator getFooterLocator()
+```
+
+### getContentLocator
+
+Locator for the default content slot (non-slotted first child).
+
+```java
+Locator getContentLocator()
+```
+
+## Assertion Methods
+
+### assertTitle
+
+Assert the card title text, or absence when null.
+
+```java
+void assertTitle(String title)
+```
+
+<ParamField path="title" type="String">
+  Expected title text, or null to assert absence
+</ParamField>
+
+### assertSubtitle
+
+Assert the card subtitle text, or absence when null.
+
+```java
+void assertSubtitle(String subtitle)
+```
+
+<ParamField path="subtitle" type="String">
+  Expected subtitle text, or null to assert absence
+</ParamField>
+
+## Usage Examples
+
+### Access Card Slots
+
+```java
+CardElement card = CardElement.getByTitle(page, "Lapland");
+card.assertVisible();
+card.assertTheme("outlined");
+card.assertCssClass("lapland-card");
+card.assertTitle("Lapland");
+card.assertSubtitle("The Exotic North");
+
+assertThat(card.getHeaderPrefixLocator()).hasText("Lapland prefix");
+assertThat(card.getHeaderSuffixLocator()).hasText("Arctic");
+assertThat(card.getMediaLocator()).hasText("Aurora media");
+assertThat(card.getContentLocator())
+    .containsText("Lapland is the northern-most region of Finland");
+```
+
+### Working with Footer Actions
+
+```java
+CardElement card = CardElement.getByTitle(page, "Booking Card");
+card.assertTheme("elevated");
+
+// Click button in footer
+ButtonElement footerButton = new ButtonElement(
+    card.getFooterLocator().filter(
+        new Locator.FilterOptions().setHasText("Book now")
+    )
+);
+footerButton.click();
+```
+
+### Find Nested Components
+
+```java
+CardElement card = CardElement.getByTitle(page, "Action Card");
+
+// Find button within card content
+ButtonElement bookButton = ButtonElement.getByText(card.getLocator(), "Book now");
+bookButton.click();
+
+ButtonElement resetButton = ButtonElement.getByText(card.getLocator(), "Reset");
+resetButton.click();
+```

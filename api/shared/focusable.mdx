@@ -1,0 +1,243 @@
+---
+title: FocusableElement
+description: Mixin interface for components that can receive keyboard focus
+---
+
+## Overview
+
+`FocusableElement` provides methods for managing keyboard focus on Vaadin components. It allows you to programmatically focus and blur elements, retrieve tab index values, and assert focus state in tests.
+
+**Interface Location:** `org.vaadin.addons.dramafinder.element.shared.FocusableElement`
+
+## Methods
+
+### getFocusLocator()
+
+```java
+default Locator getFocusLocator()
+```
+
+Returns the locator to focus or blur. By default, returns the component root, but implementations may override this to target a specific internal element (e.g., an input field within a larger component).
+
+**Returns:** `Locator` - The locator to receive focus operations
+
+---
+
+### focus()
+
+```java
+default void focus()
+```
+
+Programmatically sets keyboard focus to the component.
+
+---
+
+### blur()
+
+```java
+default void blur()
+```
+
+Programmatically removes keyboard focus from the component.
+
+---
+
+### getTabIndex()
+
+```java
+default String getTabIndex()
+```
+
+Retrieves the current tab index as a string from the `tabIndex` attribute.
+
+**Returns:** `String` - The tab index value, or `null` if not set
+
+---
+
+### assertIsFocused()
+
+```java
+default void assertIsFocused()
+```
+
+Asserts that the component currently has keyboard focus.
+
+**Throws:** `AssertionError` if the component is not focused
+
+---
+
+### assertIsNotFocused()
+
+```java
+default void assertIsNotFocused()
+```
+
+Asserts that the component does not have keyboard focus.
+
+**Throws:** `AssertionError` if the component is focused
+
+## Implementing Classes
+
+The following element classes implement `FocusableElement`:
+
+- `ButtonElement`
+- `CheckboxElement`
+- `RadioButtonElement`
+- `TextFieldElement` (and all subclasses)
+- `ComboBoxElement`
+- `MultiSelectComboBoxElement`
+- `SelectElement`
+- `MessageInputElement`
+- `GridElement`
+- `VirtualListElement`
+- `AvatarElement`
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.TextFieldElement;
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+import com.microsoft.playwright.Page;
+
+public class FocusTest {
+    void testFocusBehavior(Page page) {
+        TextFieldElement username = TextFieldElement.getByLabel(page, "Username");
+        TextFieldElement password = TextFieldElement.getByLabel(page, "Password");
+        
+        // Focus first field
+        username.focus();
+        username.assertIsFocused();
+        password.assertIsNotFocused();
+        
+        // Type and move to next field
+        username.setValue("admin");
+        password.focus();
+        
+        // Verify focus moved
+        username.assertIsNotFocused();
+        password.assertIsFocused();
+        
+        // Blur to trigger validation
+        password.setValue("wrong");
+        password.blur();
+        password.assertIsNotFocused();
+    }
+}
+```
+
+## Implementation Details
+
+### Locator Delegation Pattern
+
+Many components override `getFocusLocator()` to delegate focus operations to an internal element. For example, text fields delegate to their input element:
+
+```java
+@Override
+public Locator getFocusLocator() {
+    return getInputLocator();  // Focus the input, not the wrapper
+}
+```
+
+This ensures focus is applied to the correct interactive element within the component's shadow DOM structure.
+
+### Tab Index Management
+
+The `getTabIndex()` method retrieves the `tabIndex` attribute, which controls the tab order of focusable elements:
+- `0` - Natural tab order (default for interactive elements)
+- Positive number - Custom tab order (lower numbers are focused first)
+- `-1` - Programmatically focusable but not in tab order
+
+## Testing Patterns
+
+### Form Navigation Testing
+
+```java
+// Test keyboard navigation through form fields
+TextFieldElement field1 = TextFieldElement.getByLabel(page, "First Name");
+TextFieldElement field2 = TextFieldElement.getByLabel(page, "Last Name");
+
+field1.focus();
+field1.assertIsFocused();
+
+// Simulate Tab key press
+page.keyboard().press("Tab");
+
+field2.assertIsFocused();
+```
+
+### Validation on Blur
+
+```java
+// Many Vaadin components validate when focus is lost
+TextFieldElement email = TextFieldElement.getByLabel(page, "Email");
+
+email.focus();
+email.setValue("invalid-email");
+email.blur();
+
+// Validation triggers on blur
+email.assertInvalid();
+email.assertErrorMessage("Please enter a valid email address");
+```
+
+### Focus After Dialog Open
+
+```java
+// Open dialog and verify focus moves to it
+ButtonElement openDialog = ButtonElement.getByText(page, "Open Dialog");
+openDialog.click();
+
+TextFieldElement dialogField = TextFieldElement.getByLabel(page, "Name");
+dialogField.assertIsFocused();
+```
+
+### Testing Autofocus
+
+```java
+// Verify autofocus attribute behavior
+page.navigate("http://localhost:8080/form");
+
+TextFieldElement firstField = TextFieldElement.getByLabel(page, "Search");
+firstField.assertIsFocused();
+```
+
+## Best Practices
+
+### Use blur() to Trigger Validation
+
+Many Vaadin components perform validation when focus is lost. Always call `blur()` after setting a value if you want to test validation:
+
+```java
+field.setValue("test");
+field.blur();  // Triggers validation
+field.assertInvalid();
+```
+
+### Check Focus State Before Interaction
+
+Before performing keyboard input, ensure the element has focus:
+
+```java
+field.focus();
+field.assertIsFocused();
+page.keyboard().type("text");
+```
+
+### Test Tab Order
+
+Verify that users can navigate through your form using the Tab key in the expected order:
+
+```java
+field1.focus();
+page.keyboard().press("Tab");
+field2.assertIsFocused();
+page.keyboard().press("Tab");
+field3.assertIsFocused();
+```
+
+## Related Interfaces
+
+- [HasEnabledElement](/api/shared/has-enabled) - Disabled elements cannot receive focus
+- [HasInputFieldElement](/api/shared/has-input-field) - Most input fields are focusable
+- [HasValidationPropertiesElement](/api/shared/has-validation-properties) - Validation often triggers on blur

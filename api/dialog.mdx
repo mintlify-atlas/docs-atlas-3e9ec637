@@ -1,0 +1,174 @@
+---
+title: DialogElement
+description: Playwright element wrapper for Vaadin Dialog component testing
+---
+
+## Overview
+
+`DialogElement` is a Playwright wrapper for `<vaadin-dialog>`. It provides access to header, content, and footer slots, as well as modal flags and open state management.
+
+**Component tag:** `vaadin-dialog`
+
+**Implements:**
+- `HasThemeElement`
+- `HasStyleElement`
+
+## Constructors
+
+### DialogElement(Page page)
+
+Create a `DialogElement` by resolving the dialog with ARIA role `dialog`.
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+### DialogElement(Locator locator)
+
+Create a `DialogElement` from an existing locator.
+
+<ParamField path="locator" type="Locator" required>
+  The Playwright locator for the dialog element
+</ParamField>
+
+## Methods
+
+### closeWithEscape()
+
+Close the dialog using the Escape key.
+
+### isOpen()
+
+Check whether the dialog is open (visible).
+
+**Returns:** `boolean` - True if the dialog is visible
+
+### assertOpen()
+
+Assert that the dialog is open.
+
+**Verifies:** The element has the `opened` attribute.
+
+### assertClosed()
+
+Assert that the dialog is closed (hidden).
+
+**Verifies:** The element is hidden in the DOM.
+
+### isModal()
+
+Check whether the dialog is modal (i.e., not modeless).
+
+**Returns:** `boolean` - True if the dialog is modal
+
+### assertModal()
+
+Assert that the dialog is modal.
+
+**Verifies:** The element does not have the `modeless` attribute.
+
+### assertModeless()
+
+Assert that the dialog is modeless.
+
+**Verifies:** The element has the `modeless` attribute.
+
+### getHeaderText()
+
+Get the header text from the title slot.
+
+**Returns:** `String` - The text content of the header
+
+### assertHeaderText(String headerText)
+
+Assert that the header text matches the expected value.
+
+<ParamField path="headerText" type="String" required>
+  The expected header text
+</ParamField>
+
+### getHeaderLocator()
+
+Get the locator for the header content slot.
+
+**Returns:** `Locator` - Locator for `[slot='header-content']`
+
+### getContentLocator()
+
+Get the locator for the dialog content (first non-slotted child).
+
+**Returns:** `Locator` - Locator for the main content area
+
+### getFooterLocator()
+
+Get the locator for the footer slot.
+
+**Returns:** `Locator` - Locator for `[slot='footer']`
+
+## Static Factory Methods
+
+### getByHeaderText(Page page, String summary)
+
+Get a dialog by its header text (accessible name).
+
+<ParamField path="page" type="Page" required>
+  The Playwright page instance
+</ParamField>
+
+<ParamField path="summary" type="String" required>
+  The header text that serves as the dialog's accessible name
+</ParamField>
+
+**Returns:** `DialogElement` - The dialog with the specified header text
+
+## Usage Example
+
+```java
+import org.vaadin.addons.dramafinder.element.DialogElement;
+import org.vaadin.addons.dramafinder.element.ButtonElement;
+
+// Open a dialog
+ButtonElement openButton = ButtonElement.getByText(page, "Open dialog");
+openButton.click();
+
+// Access the dialog
+DialogElement dialog = new DialogElement(page);
+dialog.assertOpen();
+dialog.assertModal();
+
+// Verify header
+dialog.assertHeaderText("My Dialog");
+
+// Verify content
+assertThat(dialog.getContentLocator()).hasText("This is the content of the dialog.");
+
+// Close via footer button
+ButtonElement closeButton = ButtonElement.getByText(dialog.getFooterLocator(), "Close");
+closeButton.click();
+dialog.assertClosed();
+
+// Access dialog by header text
+ButtonElement openDialog2 = ButtonElement.getByText(page, "Open non-modal 1");
+openDialog2.click();
+DialogElement dialog1 = DialogElement.getByHeaderText(page, "My non-modal Dialog 1");
+dialog1.assertOpen();
+dialog1.assertModeless();
+
+// Close with Escape key
+dialog1.closeWithEscape();
+dialog1.assertClosed();
+
+// Verify theme and class
+dialog.assertTheme("no-padding");
+dialog.assertCssClass("custom-dialog");
+
+// Access header content slot
+assertThat(dialog.getHeaderLocator()).hasText("This is the header of the dialog.");
+```
+
+## Notes
+
+- Modal dialogs block interaction with the rest of the page
+- Modeless dialogs allow interaction with other page elements
+- The dialog uses ARIA role `dialog` for accessibility
+- Header text serves as the accessible name of the dialog
